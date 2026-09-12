@@ -1,0 +1,9 @@
+EXPORTS
+	
+	GetObjectProperty
+	
+	PathPipeLineCreate
+	PathPipeLineDestroy
+	PathPipeLineAddLogicalLine
+	PathPipeEnumPathstages
+

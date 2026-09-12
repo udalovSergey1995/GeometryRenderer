@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GeometryRenderer.NET.TestApp": {
+      "commandName": "Project",
+      "debugEngines": "managed,native"
+    }
+  }
+}

@@ -1,0 +1,300 @@
+﻿/* path_stages.c — реализация контейнера этапов преобразования пути */
+
+#include "stdafx.h"
+
+/*=============================================================================
+ *  Внутренние функции списка
+ *===========================================================================*/
+
+static
+VOID
+GR_CALL
+PathStagesInitializeListHead(
+    _Out_ PLIST_ENTRY ListHead
+    )
+{
+    ListHead->Flink = ListHead;
+    ListHead->Blink = ListHead;
+}
+
+static
+UINT8
+GR_CALL
+PathStagesIsListEmpty(
+    _In_ PLIST_ENTRY ListHead
+    )
+{
+    return (UINT8)(ListHead->Flink == ListHead);
+}
+
+static
+VOID
+GR_CALL
+PathStagesInsertTailList(
+    _Inout_ PLIST_ENTRY ListHead,
+    _Inout_ PLIST_ENTRY Entry
+    )
+{
+    PLIST_ENTRY Blink;
+
+    Blink = ListHead->Blink;
+    Entry->Flink = ListHead;
+    Entry->Blink = Blink;
+    Blink->Flink = Entry;
+    ListHead->Blink = Entry;
+}
+
+static
+VOID
+GR_CALL
+PathStagesRemoveEntryList(
+    _Inout_ PLIST_ENTRY Entry
+    )
+{
+    PLIST_ENTRY Flink;
+    PLIST_ENTRY Blink;
+
+    Flink = Entry->Flink;
+    Blink = Entry->Blink;
+    Blink->Flink = Flink;
+    Flink->Blink = Blink;
+}
+
+/*=============================================================================
+ *  Инициализация / Создание / Уничтожение
+ *===========================================================================*/
+
+VOID
+GR_CALL
+PathStagesInitialize(
+    _Out_ PSPathStages PathStages
+    )
+{
+    PathStagesInitializeListHead(&PathStages->Head);
+    PathStages->Count = 0;
+
+    PathStages->Base.type = EOT_PathStages;
+}
+
+VOID
+GR_CALL
+PathStagesUninitialize(
+    _Inout_ PSPathStages PathStages
+    )
+{
+    PathStagesClear(PathStages);
+}
+
+_Check_return_
+_Success_(return != NULL)
+_Ret_maybenull_
+PSPathStages
+GR_CALL
+PathStagesCreate(
+    VOID
+    )
+{
+    PSPathStages PathStages;
+
+    PathStages = (PSPathStages)malloc(sizeof(SPathStages));
+    if (PathStages != NULL)
+    {
+        PathStagesInitialize(PathStages);
+    }
+
+    return PathStages;
+}
+
+VOID
+GR_CALL
+PathStagesDestroy(
+    _In_opt_ PSPathStages PathStages
+    )
+{
+    if (PathStages != NULL)
+    {
+        PathStagesUninitialize(PathStages);
+        //free(PathStages);
+    }
+}
+
+/*=============================================================================
+ *  Манипуляции с этапами
+ *===========================================================================*/
+
+_Check_return_
+_Success_(return != 0)
+INT32
+GR_CALL
+PathStagesAddStage(
+    _Inout_ PSPathStages PathStages,
+    _In_ EPathStageType StageType,
+    _In_ PVOID StageData,
+    _In_opt_ PFN_PATH_STAGE_FREE FreeCallback
+    )
+{
+    PSPathStageEntry Entry;
+    PSPathStageEntry LastStage;
+
+    if (PathStages == NULL || StageData == NULL || StageType == PathStageTypeInvalid)
+    {
+        return 0;
+    }
+
+    //
+    // Правило: подряд одинаковый этап не может повторяться
+    //
+    LastStage = PathStagesGetLastStage(PathStages);
+    if (LastStage != NULL && LastStage->StageType == StageType)
+    {
+        return 0;
+    }
+
+    Entry = (PSPathStageEntry)malloc(sizeof(SPathStageEntry));
+    if (Entry == NULL)
+    {
+        return 0;
+    }
+
+    Entry->StageType = StageType;
+    Entry->StageData = StageData;
+    Entry->FreeCallback = FreeCallback;
+    Entry->Base.type = EOT_PipeStageEntry;
+
+    PathStagesInsertTailList(&PathStages->Head, &Entry->ListEntry);
+    PathStages->Count++;
+
+    return 1;
+}
+
+VOID
+GR_CALL
+PathStagesRemoveStage(
+    _Inout_ PSPathStages PathStages,
+    _In_ PSPathStageEntry StageEntry
+    )
+{
+    if (PathStages == NULL || StageEntry == NULL)
+    {
+        return;
+    }
+
+    PathStagesRemoveEntryList(&StageEntry->ListEntry);
+    PathStages->Count--;
+
+    if (StageEntry->FreeCallback != NULL)
+    {
+        StageEntry->FreeCallback(StageEntry->StageData);
+    }
+
+    free(StageEntry);
+}
+
+VOID
+GR_CALL
+PathStagesClear(
+    _Inout_ PSPathStages PathStages
+    )
+{
+    PSPathStageEntry Entry;
+    PLIST_ENTRY Current;
+    PLIST_ENTRY Next;
+
+    if (PathStages == NULL)
+    {
+        return;
+    }
+
+    Current = PathStages->Head.Flink;
+    while (Current != &PathStages->Head)
+    {
+        Next = Current->Flink;
+        Entry = CONTAINING_RECORD(Current, SPathStageEntry, ListEntry);
+
+        if (Entry->FreeCallback != NULL)
+        {
+            Entry->FreeCallback(Entry->StageData);
+        }
+
+        free(Entry);
+        Current = Next;
+    }
+
+    PathStagesInitializeListHead(&PathStages->Head);
+    PathStages->Count = 0;
+}
+
+/*=============================================================================
+ *  Доступ к этапам
+ *===========================================================================*/
+
+_Ret_maybenull_
+_Post_writable_byte_size_(sizeof(SPathStageEntry))
+PSPathStageEntry
+GR_CALL
+PathStagesGetLastStage(
+    _In_ PSPathStages PathStages
+    )
+{
+    if (PathStages == NULL || PathStagesIsListEmpty(&PathStages->Head))
+    {
+        return NULL;
+    }
+
+    return CONTAINING_RECORD(PathStages->Head.Blink, SPathStageEntry, ListEntry);
+}
+
+_Ret_maybenull_
+_Post_writable_byte_size_(sizeof(SPathStageEntry))
+PSPathStageEntry
+GR_CALL
+PathStagesGetFirstStage(
+    _In_ PSPathStages PathStages
+    )
+{
+    if (PathStages == NULL || PathStagesIsListEmpty(&PathStages->Head))
+    {
+        return NULL;
+    }
+
+    return CONTAINING_RECORD(PathStages->Head.Flink, SPathStageEntry, ListEntry);
+}
+
+UINT32
+GR_CALL
+PathStagesGetCount(
+    _In_ PSPathStages PathStages
+    )
+{
+    if (PathStages == NULL)
+    {
+        return 0;
+    }
+
+    return PathStages->Count;
+}
+
+/*=============================================================================
+ *  Итерация
+ *===========================================================================*/
+
+VOID
+GR_CALL
+PathStagesEnum(
+    _In_ PSPathStages PathStages,
+    _In_ PFN_PATH_STAGE_ENUM Callback,
+    _In_opt_ PVOID Context
+    )
+{
+    PSPathStageEntry Entry;
+
+    if (PathStages == NULL || Callback == NULL)
+    {
+        return;
+    }
+
+    PATH_STAGES_FOREACH(PathStages, Entry)
+    {
+        Callback(Entry, Context);
+    }
+}

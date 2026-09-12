@@ -1,0 +1,18 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Native/">
+    <Project Path="GeometryRenderer/GeometryRenderer.vcxproj" Id="b051b84b-b332-45f7-88bb-0b98b83d1b90">
+      <BuildType Project="Debug" />
+    </Project>
+    <Project Path="GeometryRendererLib/GeometryRendererLib.vcxproj" Id="68c2db55-c149-4e19-8ddd-d0e9463f4d25">
+      <BuildType Project="Debug" />
+    </Project>
+  </Folder>
+  <Project Path="GeometryRenderer.NET.Bindings/GeometryRenderer.NET.Bindings.csproj" Id="73648693-c03f-433d-aba7-88dc053b3a67">
+    <BuildDependency Project="GeometryRenderer/GeometryRenderer.vcxproj" />
+  </Project>
+  <Project Path="GeometryRenderer.NET.TestApp/GeometryRenderer.NET.TestApp.csproj" Id="7c106803-703b-40a8-ab9d-a57eac51b8de" />
+</Solution>
