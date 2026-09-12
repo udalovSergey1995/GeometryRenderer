@@ -289,7 +289,11 @@ namespace GeometryRenderer.NET.TestApp
 
                 pl.AddBezierePath(points, types, false);
 
-                var plType = pl.Entries.Last().StageType;
+                var plType = pl.CurrentStage.StageType;
+
+                pl.FlettenizePath();
+
+                plType = pl.CurrentStage.StageType;
             }
         }
     }

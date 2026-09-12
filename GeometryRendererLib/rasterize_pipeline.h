@@ -22,7 +22,7 @@ PathPipeLineDestroy(
 );
 
 GR_EXPORT
-INT
+BOOL
 GR_CALL
 PathPipeLineAddLogicalLine(
 	_In_ PSPathPipeLine pPipeline,
@@ -34,6 +34,13 @@ PathPipeLineAddLogicalLine(
 );
 
 GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineFlattenizeLogicalLine(
+	_In_ PSPathPipeLine pPipeline
+);
+
+GR_EXPORT
 PSPathStageEntry
 GR_CALL
 PathPipeEnumPathstages(
@@ -41,4 +48,9 @@ PathPipeEnumPathstages(
 	_In_ PSPathStageEntry pCurrentItem
 );
 
-
+GR_EXPORT
+PSPathStageEntry
+GR_CALL
+PathPipeLineGetLastStage(
+	_In_ PSPathPipeLine pPipeline
+);

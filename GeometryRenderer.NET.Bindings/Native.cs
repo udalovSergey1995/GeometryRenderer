@@ -78,5 +78,11 @@ namespace GeometryRenderer.NET.Bindings
             int count,
             int isBezier,
             int isClose);
+
+        [DllImport(
+            NtivePinvokeDefs.GeometryRendererDll,
+            CallingConvention = CallingConvention.StdCall,
+            EntryPoint = "PathPipeLineFlattenizeLogicalLine")]
+        public static extern int PathPipeLineFlattenizeLogicalLine(IntPtr pPipeLine);
     }
 }

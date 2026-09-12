@@ -4,6 +4,10 @@ EXPORTS
 	
 	PathPipeLineCreate
 	PathPipeLineDestroy
+
 	PathPipeLineAddLogicalLine
+	PathPipeLineFlattenizeLogicalLine
+
 	PathPipeEnumPathstages
+	PathPipeLineGetLastStage
 

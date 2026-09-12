@@ -42,7 +42,7 @@ PathPipeLineDestroy(
 * iCount - количество пар коордиат
 */
 GR_EXPORT
-INT
+BOOL
 GR_CALL
 PathPipeLineAddLogicalLine(
 	_In_ PSPathPipeLine pPipeline,
@@ -54,7 +54,7 @@ PathPipeLineAddLogicalLine(
 )
 {
 	if (!pPipeline || !pTypes|| !pPoints || !iCount)
-		return 0;
+		return FALSE;
 
 	PSLineItem pLineItem = LineItemAllocate(iCount,
 		fIsBeziere ? LineItemType_Bezier : LineItemType_Flatten,
@@ -62,7 +62,7 @@ PathPipeLineAddLogicalLine(
 
 	if (!pLineItem)
 	{
-		return 0;
+		return FALSE;
 	}
 	else
 	{
@@ -77,10 +77,53 @@ PathPipeLineAddLogicalLine(
 		LineItemFreeWithPoints))
 	{
 		LineItemFree(pLineItem);
-		return 0;
+		return FALSE;
 	}
 
-	return 1;
+	return TRUE;
+}
+
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineFlattenizeLogicalLine(
+	_In_ PSPathPipeLine pPipeline
+)
+{
+	if (!pPipeline || !pPipeline->m_sPathStages.Count)
+	{
+		return FALSE;
+	}
+
+	//Получить тип последнего состояния пайплайна
+	PSPathStageEntry pCurrentItem = PathStagesGetLastStage(&pPipeline->m_sPathStages);
+
+	//Проверить не является ли айтем головой списка
+	//и узнать совместима ли трансформация с текущим состоянием пайплайна 
+	if (!pCurrentItem
+		|| pCurrentItem->StageType != PathStageTypeLogicalCurve)
+	{
+		return FALSE;
+	}
+
+	PSLineItem pFlattenLineItem = FlattenItemInit(pCurrentItem->StageData);
+
+	if (!pFlattenLineItem)
+	{
+		return FALSE;
+	}
+
+	if (!PathStagesAddStage(
+		&pPipeline->m_sPathStages,
+		PathStageTypeApproximated,
+		pFlattenLineItem,
+		FlattenItemFree))
+	{
+		FlattenItemFree(pFlattenLineItem);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 GR_EXPORT
@@ -117,3 +160,17 @@ ret_pt:
 	return entry;
 }
 
+GR_EXPORT
+PSPathStageEntry
+GR_CALL
+PathPipeLineGetLastStage(
+	_In_ PSPathPipeLine pPipeline
+)
+{
+	if (!pPipeline)
+	{
+		return NULL;
+	}
+
+	return PathStagesGetLastStage(&pPipeline->m_sPathStages);
+}

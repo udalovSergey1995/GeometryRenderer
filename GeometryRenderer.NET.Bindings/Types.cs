@@ -42,6 +42,11 @@ namespace GeometryRenderer.NET.Bindings.Types
         {
             _nativeObject = nativeOblect;
         }
+
+        public IntPtr GetNativeObject()
+        {
+            return _nativeObject;
+        }
     }
 
     public class PipeLogicalLineStage : PipeLineStage
@@ -68,7 +73,7 @@ namespace GeometryRenderer.NET.Bindings.Types
 
         private IEnumerable<IntPtr> nativeEntries => NativeEnumerators.PathPipeEnumPathstages(_nativeObject);
 
-        public IEnumerable<PipeLineStage> Entries
+        public IEnumerable<PipeLineStage> StageList
         {
             get
             {
@@ -100,6 +105,9 @@ namespace GeometryRenderer.NET.Bindings.Types
                 yield break;
             }
         }
+
+        public PipeLineStage CurrentStage 
+            => new PipeLineStage(NativeEnumerators.PathPipeLineGetLastStage(_nativeObject));
 
         /// <summary>
         /// Создать объект графического пайплайна
@@ -172,6 +180,21 @@ namespace GeometryRenderer.NET.Bindings.Types
         public void AddPath(float[] points, byte[] ptTypes, bool isClosed = false)
         {
             AddPathData(points, ptTypes, false, isClosed);
+        }
+
+        public void FlettenizePath()
+        {
+            if (CurrentStage.StageType != EPathStageType.PathStageTypeLogicalCurve)
+            {
+                throw new Exception("Текущее состояние пайплайна недопускает данную операцию");
+            }
+
+            int result = Native.PathPipeLineFlattenizeLogicalLine(_nativeObject);
+            
+            if (result != 1)
+            {
+                throw new Exception("Ошибка апроксимации");
+            }
         }
 
         public void ClosePath()

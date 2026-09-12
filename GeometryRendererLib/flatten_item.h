@@ -41,7 +41,7 @@ FlattenItemFree(
    ------------------------------------------------------------- */
 VOID
 GR_CALL
-FlattenItemFreeCallback(
+FlattenItemFree(
     _In_ PVOID StageData
 );
 

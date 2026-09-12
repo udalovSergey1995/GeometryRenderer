@@ -14,7 +14,7 @@ namespace GeometryRenderer.NET.Bindings
             EntryPoint = "PathPipeEnumPathstages")]
         private static extern IntPtr PathPipeEnumPathstages(IntPtr pPipeline, IntPtr pCurrentEntry);
 
-        public static IEnumerable<IntPtr> PathPipeEnumPathstages(IntPtr pPipeline)
+        internal static IEnumerable<IntPtr> PathPipeEnumPathstages(IntPtr pPipeline)
         {
             IntPtr pCurrentEntry = IntPtr.Zero;
 
@@ -29,5 +29,11 @@ namespace GeometryRenderer.NET.Bindings
 
             } while (pCurrentEntry != IntPtr.Zero);
         }
+
+        [DllImport(
+            NtivePinvokeDefs.GeometryRendererDll,
+            CallingConvention = CallingConvention.StdCall,
+            EntryPoint = "PathPipeLineGetLastStage")]
+        internal static extern IntPtr PathPipeLineGetLastStage(IntPtr pPipeline);
     }
 }

@@ -371,28 +371,16 @@ FlattenItemInit(
 }
 
 /* -------------------------------------------------------------
-   FlattenItemFree
-   ------------------------------------------------------------- */
-VOID
-GR_CALL
-FlattenItemFree(
-    _Inout_ PSLineItem FlattenItem
-)
-{
-    LineItemFreeWithPoints(FlattenItem);
-}
-
-/* -------------------------------------------------------------
    Callback для интеграции с PathStages
    ------------------------------------------------------------- */
 VOID
 GR_CALL
-FlattenItemFreeCallback(
+FlattenItemFree(
     _In_ PVOID StageData
 )
 {
     if (StageData != NULL)
     {
-        FlattenItemFree((PSLineItem)StageData);
+        LineItemFreeWithPoints((PSLineItem)StageData);
     }
 }
