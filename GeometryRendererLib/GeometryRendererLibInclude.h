@@ -9,6 +9,7 @@
 
 #include "base_types.h"
 
+#include "stages_props.h"
 #include "base_object.h"
 
 #include "path_stages.h"

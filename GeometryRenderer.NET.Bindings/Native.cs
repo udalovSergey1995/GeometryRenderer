@@ -9,8 +9,6 @@ namespace GeometryRenderer.NET.Bindings
 {
     public static class Native
     {
-        private const string GeometryRendererDll = "GeometryRenderer.dll";
-
         /// <summary>
         /// Нативная функция для получения свойства объекта
         /// </summary>
@@ -20,7 +18,7 @@ namespace GeometryRenderer.NET.Bindings
         /// <param name="pOutLen">Указатель на размер выходных данных (вход/выход)</param>
         /// <returns>0 при успехе, иначе код ошибки</returns>
         [DllImport(
-            GeometryRendererDll, 
+            NtivePinvokeDefs.GeometryRendererDll, 
             CallingConvention = CallingConvention.Cdecl)]
         private static extern int GetObjectProperty(
             IntPtr pObject,
@@ -30,14 +28,14 @@ namespace GeometryRenderer.NET.Bindings
         );
 
         [DllImport(
-            GeometryRendererDll,
+            NtivePinvokeDefs.GeometryRendererDll,
             CallingConvention = CallingConvention.StdCall,
             EntryPoint = "PathPipeLineCreate")]
         public static extern IntPtr PathPipeLineCreate();
 
 
         [DllImport(
-            GeometryRendererDll,
+            NtivePinvokeDefs.GeometryRendererDll,
             CallingConvention = CallingConvention.StdCall,
             EntryPoint = "PathPipeLineDestroy")]
         public static extern int PathPipeLineDestroy(IntPtr pPipeline);
@@ -58,7 +56,7 @@ namespace GeometryRenderer.NET.Bindings
         /// <param name="isClose">TRUE (1) если путь замкнутый.</param>
         /// <returns>Необработанный указатель на SPathPipeLine или IntPtr.Zero при ошибке.</returns>
         [DllImport(
-            GeometryRendererDll,
+            NtivePinvokeDefs.GeometryRendererDll,
             CallingConvention = CallingConvention.StdCall,
             EntryPoint = "PathPipeLineAddLogicalLine")]
         public static extern int PathPipeLineAddLogicalLine(
@@ -70,7 +68,7 @@ namespace GeometryRenderer.NET.Bindings
             int isClose);
 
         [DllImport(
-            GeometryRendererDll,
+            NtivePinvokeDefs.GeometryRendererDll,
             CallingConvention = CallingConvention.StdCall,
             EntryPoint = "PathPipeLineAddLogicalLine")]
         public static extern int PathPipeLineAddLogicalLine(
@@ -80,28 +78,5 @@ namespace GeometryRenderer.NET.Bindings
             int count,
             int isBezier,
             int isClose);
-
-
-        [DllImport(
-            GeometryRendererDll,
-            CallingConvention = CallingConvention.StdCall,
-            EntryPoint = "PathPipeEnumPathstages")]
-        private static extern IntPtr PathPipeEnumPathstages(IntPtr pPipeline, IntPtr pCurrentEntry);
-
-        public static IEnumerable<IntPtr> PathPipeEnumPathstages(IntPtr pPipeline)
-        {
-            IntPtr pCurrentEntry = IntPtr.Zero;
-
-            do 
-            {
-                pCurrentEntry = PathPipeEnumPathstages(pPipeline, pCurrentEntry);
-
-                if (pCurrentEntry == IntPtr.Zero)
-                    yield break;
-
-                yield return pCurrentEntry;
-
-            } while (pCurrentEntry != IntPtr.Zero);
-        }
     }
 }

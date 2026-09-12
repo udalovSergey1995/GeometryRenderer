@@ -48,11 +48,14 @@ typedef struct _PathStageEntry
 {
     SBaseObject Base;
 
-    LIST_ENTRY ListEntry;
+    LIST_ENTRY ListEntry;    
 
     EPathStageType StageType;
+                              
     PVOID StageData;
+
     PFN_PATH_STAGE_FREE FreeCallback;
+
 } SPathStageEntry, *PSPathStageEntry;
 
 /*=============================================================================
@@ -63,6 +66,7 @@ typedef struct _PathStages
     SBaseObject Base;
 
     LIST_ENTRY Head;
+
     UINT32 Count;
 } SPathStages, *PSPathStages;
 
@@ -168,6 +172,15 @@ PathStagesEnum(
     _In_ PFN_PATH_STAGE_ENUM Callback,
     _In_opt_ PVOID Context
     );
+
+BOOL
+GR_CALL
+PathStagesGetProperty(
+    _In_ PVOID pObject,
+    _In_ INT eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
 
 #ifdef __cplusplus
 }

@@ -73,8 +73,6 @@ PathPipeLineAddLogicalLine(
 		fIsClose))
 	{
 		free(pLineItem);
-		free(pPipeline);
-
 		return 0;
 	}
 
@@ -85,13 +83,10 @@ PathPipeLineAddLogicalLine(
 		LineItemFree))
 	{
 		PathStagesDestroy(&pPipeline->m_sPathStages);
-		free(pPipeline);
-
 		return 0;
 	}
 
 	return 1;
-
 }
 
 GR_EXPORT
@@ -102,10 +97,14 @@ PathPipeEnumPathstages(
 	_In_ PSPathStageEntry pCurrentItem
 )
 {
-	if (!pPipeline)
-		return 0;
 
 	PSPathStageEntry entry = NULL;
+
+	if (!pPipeline 
+		|| pPipeline->m_sPathStages.Head.Flink == &pPipeline->m_sPathStages.Head)
+	{
+		goto ret_pt;
+	}
 
 	if (!pCurrentItem)
 	{
@@ -116,8 +115,10 @@ PathPipeEnumPathstages(
 		entry = CONTAINING_RECORD(pCurrentItem->ListEntry.Flink, SPathStageEntry, ListEntry);
 	}
 
-	if (entry == &(pPipeline->m_sPathStages.Head))
-		return NULL;
+	if (&entry->ListEntry == &(pPipeline->m_sPathStages.Head))
+		entry = NULL;
+
+ret_pt:
 
 	return entry;
 }

@@ -114,7 +114,7 @@ PathStagesDestroy(
     if (PathStages != NULL)
     {
         PathStagesUninitialize(PathStages);
-        //free(PathStages);
+        free(PathStages);
     }
 }
 
@@ -298,3 +298,124 @@ PathStagesEnum(
         Callback(Entry, Context);
     }
 }
+
+BOOL
+GR_CALL
+PathStagesEntryGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    BOOL fResult = FALSE;
+
+    BOOL fIsFree = FALSE;
+    PBYTE pTmpOutData = NULL;
+    INT iOutLen = 0;
+
+    if (IS_LOGICAL_ITEM_PROPS(eProp))
+    {
+        PSLineItem pLine = pEntry->StageData;
+
+        switch (eProp)
+        {
+            case ESP_IS_CLOSED:
+            {
+                iOutLen = sizeof(pLine->ClosePath);
+                pTmpOutData = &pLine->ClosePath;
+
+                fResult = TRUE;
+                break;
+            }
+            case ESP_IS_BESIERE:
+            {
+                iOutLen = sizeof(BOOL);
+                pTmpOutData = malloc(iOutLen);
+
+                if (!pTmpOutData)
+                {
+                    pTmpOutData = NULL;
+                    fResult = FALSE;
+                    fIsFree = FALSE;
+                    break;
+                }
+
+                BOOL* val = pTmpOutData;
+
+                (*val) = (pLine->Type == LineItemType_Bezier);
+
+                fIsFree = TRUE;
+                fResult = TRUE;
+                break;
+            }
+            default:
+                fResult = FALSE;
+                break;
+        }
+    }
+    else
+    {
+        switch (eProp)
+        {
+            case ESP_TYPE:
+            {
+                iOutLen = sizeof(pEntry->StageType);
+                pTmpOutData = &pEntry->StageType;
+
+                fResult = TRUE;
+                break;
+            }
+            default:
+                fResult = FALSE;
+                break;
+        }
+    }
+
+    *pOutLen = iOutLen;
+    if (pTmpOutData && pOutData)
+    {
+        memcpy(pOutData, pTmpOutData, iOutLen);
+    }
+
+    if (fIsFree)
+    {
+        free(pTmpOutData);
+    }
+
+    return fResult;
+}
+
+BOOL
+GR_CALL
+PathStagesGetProperty(
+	_In_ PVOID pObject,
+	_In_ INT eProp,
+	_Maybenull_ PVOID pOutData,
+	_Out_ PINT pOutLen
+)
+{
+    EObjectType type = ((PSBaseObject)pObject)->type;
+
+    *pOutLen = 0;
+
+    switch (type)
+    {           
+        case EOT_PathStages:
+        {
+            PSPathStages pStages = pObject;
+
+            return FALSE;
+        }
+        case EOT_PipeStageEntry:
+		{
+			PSPathStageEntry pEntry = pObject;
+
+            return PathStagesEntryGetProperty(pEntry, eProp, pOutData, pOutLen);
+		}
+    default:
+        break;
+    }
+}
+
+

@@ -22,6 +22,8 @@ GetObjectProperty(
 
 	EObjectType type = ((PSBaseObject)pObject)->type;
 
+	INT iOutLen = 0;
+
 	if (type >= EOT_TypesCount)
 	{
 		pOutData = NULL;
@@ -39,12 +41,9 @@ GetObjectProperty(
 		}
 
 		case EOT_PathStages:
-		{
-			break;
-		}
-
 		case EOT_PipeStageEntry:
 		{
+			result = PathStagesGetProperty(pObject, eProp, pOutData, pOutLen);
 			break;
 		}
 	default:
@@ -52,6 +51,7 @@ GetObjectProperty(
 	}
 
 ret_pt:
+
 	return result;
 }
 

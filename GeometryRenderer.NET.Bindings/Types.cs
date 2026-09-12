@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GeometryRenderer.NET.Bindings.BaseObject;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
@@ -8,19 +9,6 @@ using System.Text;
 
 namespace GeometryRenderer.NET.Bindings.Types
 {
-    public enum _EObjectType : int
-    {
-        EOT_BadObject = 0,
-
-        EOT_PipeLine,
-
-        EOT_PathStages,
-
-        EOT_PipeStageEntry,
-
-        EOT_TypesCount,
-    }
-
     /// <summary>
     /// Типы точек пути. Соответствуют LINE_POINT_TYPE в нативном коде.
     /// </summary>
@@ -32,13 +20,86 @@ namespace GeometryRenderer.NET.Bindings.Types
         Close = 3
     }
 
+    public enum EPathStageType
+    {
+        PathStageTypeInvalid = 0,
+        PathStageTypeLogicalCurve,
+        PathStageTypeApproximated,
+        PathStageTypeDashPattern,
+        PathStageTypeThickLine
+    }
+
+    public class PipeLineStage
+    {
+        protected IntPtr _nativeObject = IntPtr.Zero;
+
+        public EPathStageType StageType
+            => (EPathStageType)BaseNativeObject.GetObjectPropertyInt(
+                    _nativeObject,
+                    (int)PathStagesEntryProps.Type);
+
+        public PipeLineStage(IntPtr nativeOblect)
+        {
+            _nativeObject = nativeOblect;
+        }
+    }
+
+    public class PipeLogicalLineStage : PipeLineStage
+    {
+        public bool IsBeziere
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.IsBeziere) == 1;
+
+        public bool IsClosed
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.IsClosed) == 1;
+
+        public PipeLogicalLineStage(IntPtr nativeOblect) : base(nativeOblect)
+        {}
+    }
+
     public class PipeLineObject : IDisposable
     {
         private IntPtr _nativeObject = IntPtr.Zero;
 
-        public int EntriesCount => Native.PathPipeEnumPathstages(_nativeObject).Count();
+        public int EntriesCount => NativeEnumerators.PathPipeEnumPathstages(_nativeObject).Count();
 
-        public IEnumerable<IntPtr> Entries => Native.PathPipeEnumPathstages(_nativeObject);
+        private IEnumerable<IntPtr> nativeEntries => NativeEnumerators.PathPipeEnumPathstages(_nativeObject);
+
+        public IEnumerable<PipeLineStage> Entries
+        {
+            get
+            {
+                foreach (var item in NativeEnumerators.PathPipeEnumPathstages(_nativeObject))
+                {
+                    EPathStageType type = (EPathStageType)BaseNativeObject.GetObjectPropertyInt(
+                        item, 
+                        (int)PathStagesEntryProps.Type);
+
+                    switch (type)
+                    {
+                        case EPathStageType.PathStageTypeInvalid: break;
+
+                        case EPathStageType.PathStageTypeLogicalCurve:
+                            yield return new PipeLogicalLineStage(item);
+                            break;
+                        case EPathStageType.PathStageTypeApproximated:
+                            break;
+                        case EPathStageType.PathStageTypeDashPattern:
+                            break;
+                        case EPathStageType.PathStageTypeThickLine:
+                            break;
+                        default:
+                            yield return new PipeLineStage(item);
+                            break;
+                    }
+                }
+
+                yield break;
+            }
+        }
 
         /// <summary>
         /// Создать объект графического пайплайна
@@ -103,6 +164,21 @@ namespace GeometryRenderer.NET.Bindings.Types
             }
         }
 
+        public void AddBezierePath(float[] points, byte[] ptTypes, bool isClosed = false)
+        {
+            AddPathData(points, ptTypes, true, isClosed);
+        }
+
+        public void AddPath(float[] points, byte[] ptTypes, bool isClosed = false)
+        {
+            AddPathData(points, ptTypes, false, isClosed);
+        }
+
+        public void ClosePath()
+        {
+
+        }
+
         public void Dispose()
         {
             if (_nativeObject == IntPtr.Zero)
@@ -110,10 +186,5 @@ namespace GeometryRenderer.NET.Bindings.Types
 
             Native.PathPipeLineDestroy(_nativeObject);
         }
-    }
-
-    public class PathStageEntry
-    {
-        public int Type { get; set; }
     }
 }

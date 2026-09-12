@@ -21,10 +21,16 @@
     <ClInclude Include="base_object.h">
       <Filter>base</Filter>
     </ClInclude>
+    <ClInclude Include="stages_props.h">
+      <Filter>base\props</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="base">
       <UniqueIdentifier>{05603a1e-7c51-4439-adc4-a4489998820d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="base\props">
+      <UniqueIdentifier>{6e037ce3-9415-4e01-8275-deace05635be}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

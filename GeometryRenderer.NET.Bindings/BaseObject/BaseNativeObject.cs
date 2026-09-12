@@ -112,8 +112,8 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = sizeof(int);
                 int result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result != 0)
-                    throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
+                if (result != 1)
+                    throw new InvalidOperationException($"GetObjectProperty failed");
 
                 if (bufferSize != sizeof(int))
                     throw new InvalidOperationException($"Expected {sizeof(int)} bytes, but got {bufferSize}");

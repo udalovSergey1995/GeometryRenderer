@@ -55,6 +55,7 @@
     <ClInclude Include="GeometryRendererLibInclude.h" />
     <ClInclude Include="line_item.h" />
     <ClInclude Include="path_stages.h" />
+    <ClInclude Include="stages_props.h" />
     <ClInclude Include="rasterize_pipeline.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

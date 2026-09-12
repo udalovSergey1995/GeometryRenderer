@@ -23,12 +23,13 @@ namespace GeometryRenderer.NET.TestApp
             Console.WriteLine("========================================");
             Console.WriteLine();
 
-            TestSimpleLine();
-            TestBezierCurve();
-            TestClosedPath();
-            TestNullPoints();
-            TestEmptyCount();
-            TestLargePolyline();
+            TestLongPipeline();
+            //TestSimpleLine();
+            //TestBezierCurve();
+            //TestClosedPath();
+            //TestNullPoints();
+            //TestEmptyCount();
+            //TestLargePolyline();
 
             Console.WriteLine();
             Console.WriteLine("========================================");
@@ -82,10 +83,6 @@ namespace GeometryRenderer.NET.TestApp
             using (var pipeLine = new PipeLineObject())
             {
                 pipeLine.AddPathData(points, types);
-
-                var count = pipeLine.EntriesCount;
-
-                BaseNativeObject.GetObjectPropertyInt(pipeLine.Entries.ToArray()[0], 0);
             }
         }
 
@@ -266,6 +263,34 @@ namespace GeometryRenderer.NET.TestApp
             }
 
             LogPass($"Large pipeline at 0x{pipeline.ToInt64():X16}");
+        }
+
+        private static void TestLongPipeline()
+        {
+            using (var pl = new PipeLineObject())
+            {
+                Console.WriteLine("[Test] Cubic Bezier curve");
+
+                float[] points = new float[]
+                {
+                    0.0f,   0.0f,   // P0  (Move)
+                    50.0f,  100.0f, // C1  (BezierControl)
+                    150.0f, 100.0f, // C2  (BezierControl)
+                    200.0f, 0.0f    // P3  (Line)
+                };
+
+                byte[] types = new[]
+                {
+                    (byte)LinePointType.Move,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.Line
+                };
+
+                pl.AddBezierePath(points, types, false);
+
+                var plType = pl.Entries.Last().StageType;
+            }
         }
     }
 }
