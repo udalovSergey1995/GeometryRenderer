@@ -23,7 +23,7 @@ PathPipeLineCreate()
 }
 
 GR_EXPORT
-int
+VOID
 GR_CALL
 PathPipeLineDestroy(
 	_In_ PSPathPipeLine pPipeline
@@ -53,36 +53,30 @@ PathPipeLineAddLogicalLine(
 	_In_ BOOL fIsClose
 )
 {
-	if (!pPipeline || !pTypes|| !pPoints)
+	if (!pPipeline || !pTypes|| !pPoints || !iCount)
 		return 0;
 
-	PSLineItem pLineItem = malloc(sizeof(SLineItem));
+	PSLineItem pLineItem = LineItemAllocate(iCount,
+		fIsBeziere ? LineItemType_Bezier : LineItemType_Flatten,
+		fIsClose);
 
 	if (!pLineItem)
-		return 0;
-
-	memset(pLineItem, 0, sizeof(SLineItem));
-
-	if (!LineItemInitWithPoints(pLineItem,
-		(PCFLOAT)pPoints,
-		(PCLINE_POINT_TYPE)pTypes,
-		iCount,
-		fIsBeziere
-		? LineItemType_Bezier
-		: LineItemType_Flatten,
-		fIsClose))
 	{
-		free(pLineItem);
 		return 0;
+	}
+	else
+	{
+		memcpy(pLineItem->Points, pPoints, sizeof(FLOAT) * iCount);
+		memcpy(pLineItem->PointTypes, pTypes, iCount);
 	}
 
 	if (!PathStagesAddStage(
 		&pPipeline->m_sPathStages,
 		PathStageTypeLogicalCurve,
 		pLineItem,
-		LineItemFree))
+		LineItemFreeWithPoints))
 	{
-		PathStagesDestroy(&pPipeline->m_sPathStages);
+		LineItemFree(pLineItem);
 		return 0;
 	}
 

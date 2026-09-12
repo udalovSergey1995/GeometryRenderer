@@ -15,7 +15,7 @@ GR_CALL
 PathPipeLineCreate();
 
 GR_EXPORT
-int
+VOID
 GR_CALL
 PathPipeLineDestroy(
 	_In_ PSPathPipeLine pPipeline

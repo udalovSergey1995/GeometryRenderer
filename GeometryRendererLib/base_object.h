@@ -17,6 +17,7 @@ typedef struct _BaseObject
 } SBaseObject, *PSBaseObject;
 
 _Check_return_
+GR_EXPORT
 INT
 GR_CALL
 GetObjectProperty(

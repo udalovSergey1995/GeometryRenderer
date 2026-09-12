@@ -139,7 +139,7 @@ namespace GeometryRenderer.NET.Bindings.Types
 
         public void AddPathData(float[] points, byte[] ptTypes, bool isBeziere = false, bool isClosed = false)
         {
-            if (points.Length/2 != ptTypes.Length)
+            if (points.Length / 2 != ptTypes.Length)
                 throw new Exception("Not equals array len");
 
             int result = 0;
@@ -152,7 +152,7 @@ namespace GeometryRenderer.NET.Bindings.Types
                         _nativeObject,
                         new IntPtr(pPoints),
                         ptTypes,
-                        points.Length,
+                        points.Length / 2,
                         isBeziere ? 1 : 0,
                         isClosed ? 1 : 0);
                 }
@@ -181,10 +181,13 @@ namespace GeometryRenderer.NET.Bindings.Types
 
         public void Dispose()
         {
-            if (_nativeObject == IntPtr.Zero)
-                throw new Exception("Null native object");
+            if (_nativeObject != IntPtr.Zero)
+            {
+                Native.PathPipeLineDestroy(_nativeObject);
+                _nativeObject = IntPtr.Zero;
+            }
 
-            Native.PathPipeLineDestroy(_nativeObject);
+            GC.SuppressFinalize(this);
         }
     }
 }

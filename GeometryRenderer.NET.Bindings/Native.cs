@@ -38,7 +38,7 @@ namespace GeometryRenderer.NET.Bindings
             NtivePinvokeDefs.GeometryRendererDll,
             CallingConvention = CallingConvention.StdCall,
             EntryPoint = "PathPipeLineDestroy")]
-        public static extern int PathPipeLineDestroy(IntPtr pPipeline);
+        public static extern void PathPipeLineDestroy(IntPtr pPipeline);
 
         /// <summary>
         /// Создает объект пайплайна рендеринга пути.

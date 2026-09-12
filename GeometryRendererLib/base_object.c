@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 _Check_return_
+GR_EXPORT
 INT
 GR_CALL
 GetObjectProperty(

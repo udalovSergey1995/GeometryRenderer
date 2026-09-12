@@ -314,7 +314,8 @@ PathStagesEntryGetProperty(
     PBYTE pTmpOutData = NULL;
     INT iOutLen = 0;
 
-    if (IS_LOGICAL_ITEM_PROPS(eProp))
+    if (IS_LOGICAL_ITEM_PROPS(eProp) 
+        && pEntry->StageType == PathStageTypeLogicalCurve)
     {
         PSLineItem pLine = pEntry->StageData;
 
@@ -395,6 +396,11 @@ PathStagesGetProperty(
 	_Out_ PINT pOutLen
 )
 {
+    if (!pOutLen)
+    {
+        return FALSE;
+    }
+
     EObjectType type = ((PSBaseObject)pObject)->type;
 
     *pOutLen = 0;
@@ -416,6 +422,8 @@ PathStagesGetProperty(
     default:
         break;
     }
+
+    return FALSE;
 }
 
 
