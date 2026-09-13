@@ -5,6 +5,8 @@
         Bad,
         Type,
         IsClosed = 3,
-        IsBeziere
+        IsBeziere,
+
+        PointsCount
     }
 }

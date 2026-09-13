@@ -43,7 +43,7 @@ PathPipeLineDestroy(
 */
 GR_EXPORT
 BOOL
-GR_CALL
+GR_CALL																  
 PathPipeLineAddLogicalLine(
 	_In_ PSPathPipeLine pPipeline,
 	_In_ PFLOAT pPoints,
@@ -66,7 +66,7 @@ PathPipeLineAddLogicalLine(
 	}
 	else
 	{
-		memcpy(pLineItem->Points, pPoints, sizeof(FLOAT) * iCount);
+		memcpy(pLineItem->Points, pPoints, sizeof(FLOAT) * iCount * 2);
 		memcpy(pLineItem->PointTypes, pTypes, iCount);
 	}
 

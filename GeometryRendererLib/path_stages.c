@@ -315,7 +315,9 @@ PathStagesEntryGetProperty(
     INT iOutLen = 0;
 
     if (IS_LOGICAL_ITEM_PROPS(eProp) 
-        && pEntry->StageType == PathStageTypeLogicalCurve)
+        && 
+        (pEntry->StageType == PathStageTypeLogicalCurve 
+            || pEntry->StageType == PathStageTypeApproximated))
     {
         PSLineItem pLine = pEntry->StageData;
 
@@ -345,6 +347,27 @@ PathStagesEntryGetProperty(
                 BOOL* val = pTmpOutData;
 
                 (*val) = (pLine->Type == LineItemType_Bezier);
+
+                fIsFree = TRUE;
+                fResult = TRUE;
+                break;
+            }
+            case ESP_POINTS_COUNT:
+            {
+                iOutLen = sizeof(pLine->PointCount);
+                pTmpOutData = malloc(sizeof(INT));
+
+                if (!pTmpOutData)
+                {
+                    pTmpOutData = NULL;
+                    fResult = FALSE;
+                    fIsFree = FALSE;
+                    break;
+                }
+
+                INT* val = pTmpOutData;
+
+                (*val) = pLine->PointCount;
 
                 fIsFree = TRUE;
                 fResult = TRUE;

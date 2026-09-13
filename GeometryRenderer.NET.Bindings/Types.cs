@@ -61,7 +61,18 @@ namespace GeometryRenderer.NET.Bindings.Types
                     base._nativeObject,
                     (int)PathStagesEntryProps.IsClosed) == 1;
 
+        public int PointsCount
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.PointsCount);
+
         public PipeLogicalLineStage(IntPtr nativeOblect) : base(nativeOblect)
+        {}
+    }
+
+    public class PipeApproximatedLineStage : PipeLogicalLineStage
+    {
+        public PipeApproximatedLineStage(IntPtr nativeOblect) : base(nativeOblect)
         {}
     }
 
@@ -85,17 +96,19 @@ namespace GeometryRenderer.NET.Bindings.Types
 
                     switch (type)
                     {
-                        case EPathStageType.PathStageTypeInvalid: break;
+                        case EPathStageType.PathStageTypeInvalid: 
+                            break;
+
+                        case EPathStageType.PathStageTypeApproximated:
+                            yield return new PipeApproximatedLineStage(item);
+                            break;
 
                         case EPathStageType.PathStageTypeLogicalCurve:
                             yield return new PipeLogicalLineStage(item);
                             break;
-                        case EPathStageType.PathStageTypeApproximated:
-                            break;
+
                         case EPathStageType.PathStageTypeDashPattern:
-                            break;
                         case EPathStageType.PathStageTypeThickLine:
-                            break;
                         default:
                             yield return new PipeLineStage(item);
                             break;

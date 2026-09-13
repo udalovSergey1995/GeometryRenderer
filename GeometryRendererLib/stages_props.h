@@ -14,6 +14,8 @@ typedef enum _EStageProps
 
 		ESP_IS_BESIERE,
 
+		ESP_POINTS_COUNT,
+
 	ESP_LOGICAL_ITEM_END
 } EStageProps;
 

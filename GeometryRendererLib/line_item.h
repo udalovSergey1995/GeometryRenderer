@@ -14,7 +14,6 @@ typedef enum _LINE_ITEM_TYPE {
    ------------------------------------------------------------- */
 typedef struct _LineItem 
 {
-    //SPathStageEntry PathStage;
     _Field_size_(PointCount * 2) PFLOAT Points;
     _Field_size_(PointCount) PLINE_POINT_TYPE PointTypes;
     UINT                PointCount;
