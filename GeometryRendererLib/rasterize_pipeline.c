@@ -30,7 +30,7 @@ PathPipeLineDestroy(
 )
 {
 	if (!pPipeline)
-		return 0;
+		return;
 
 	PathStagesDestroy(&pPipeline->m_sPathStages);
 	free(pPipeline);
@@ -76,7 +76,7 @@ PathPipeLineAddLogicalLine(
 		pLineItem,
 		LineItemFreeWithPoints))
 	{
-		LineItemFree(pLineItem);
+		LineItemFreeWithPoints(pLineItem);
 		return FALSE;
 	}
 
@@ -120,6 +120,84 @@ PathPipeLineFlattenizeLogicalLine(
 		FlattenItemFree))
 	{
 		FlattenItemFree(pFlattenLineItem);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineApplyDashPattern(
+	_In_ PSPathPipeLine pPipeline,
+	_In_reads_(iDashCount) PCFLOAT pDashLengths,
+	_In_ INT iDashCount,
+	_In_ FLOAT fDashOffset
+)
+{
+	PSPathStageEntry pCurrentItem;
+	PSDashPatternItem pDashItem;
+	PSLineItem pSourceLine;
+
+	if (!pPipeline || !pDashLengths || iDashCount < 2)
+		return FALSE;
+
+	if (!pPipeline->m_sPathStages.Count)
+		return FALSE;
+
+	pCurrentItem = PathStagesGetLastStage(&pPipeline->m_sPathStages);
+
+	if (!pCurrentItem)
+		return FALSE;
+
+	// Можно применять dash только к LogicalCurve или Approximated
+	if (pCurrentItem->StageType != PathStageTypeLogicalCurve
+		&& pCurrentItem->StageType != PathStageTypeApproximated)
+	{
+		return FALSE;
+	}
+
+	pSourceLine = (PSLineItem)pCurrentItem->StageData;
+
+	if (!pSourceLine)
+		return FALSE;
+
+	// Если логический айтем — проверяем отсутствие Bezier
+	if (pCurrentItem->StageType == PathStageTypeLogicalCurve)
+	{
+		UINT i;
+
+		for (i = 0; i < pSourceLine->PointCount; i++)
+			if (pSourceLine->PointTypes[i] == LinePointType_BezierControl)
+				return FALSE;
+
+		pDashItem = DashPatternItemInit(
+			pSourceLine,
+			pDashLengths,
+			(UINT)iDashCount,
+			fDashOffset);
+	}
+	else
+	{
+		// Approximated — уже flatten
+		pDashItem = DashPatternItemInitFromFlatten(
+			pSourceLine,
+			pDashLengths,
+			(UINT)iDashCount,
+			fDashOffset);
+	}
+
+	if (!pDashItem)
+		return FALSE;
+
+	if (!PathStagesAddStage(
+		&pPipeline->m_sPathStages,
+		PathStageTypeDashPattern,
+		pDashItem,
+		DashPatternItemFreeCallback))
+	{
+		DashPatternItemFree(pDashItem);
 		return FALSE;
 	}
 

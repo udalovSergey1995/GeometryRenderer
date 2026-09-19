@@ -84,5 +84,15 @@ namespace GeometryRenderer.NET.Bindings
             CallingConvention = CallingConvention.StdCall,
             EntryPoint = "PathPipeLineFlattenizeLogicalLine")]
         public static extern int PathPipeLineFlattenizeLogicalLine(IntPtr pPipeLine);
+
+        [DllImport(
+            NtivePinvokeDefs.GeometryRendererDll,
+            CallingConvention = CallingConvention.StdCall,
+            EntryPoint = "PathPipeLineApplyDashPattern")]
+        public static extern int PathPipeLineApplyDashPattern(
+            IntPtr pPipeLine,
+            float[] dashLengths,
+            int dashCount,
+            float dashOffset);
     }
 }

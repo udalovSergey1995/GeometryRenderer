@@ -7,6 +7,10 @@
         IsClosed = 3,
         IsBeziere,
 
+        DashCount = 8,
+
+        DashOffset,
+
         PointsCount
     }
 }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "base_defs.h"
 
@@ -16,3 +17,4 @@
 #include "line_item.h"
 #include "flatten_item.h"
 #include "rasterize_pipeline.h"
+#include "dash_pattern_item.h"

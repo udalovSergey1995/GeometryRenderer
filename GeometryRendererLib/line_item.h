@@ -1,5 +1,4 @@
-﻿#ifndef _LINE_ITEM_H_
-#define _LINE_ITEM_H_
+﻿#pragma once
 
 /* -------------------------------------------------------------
    Тип геометрии айтема (flatten / bezier)
@@ -71,4 +70,3 @@ LineItemFreeWithPoints(
     _In_ PSLineItem  Item
     );
 
-#endif /* _LINE_ITEM_H_ */

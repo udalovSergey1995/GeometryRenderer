@@ -1,35 +1,36 @@
-﻿#ifndef _BASE_TYPES_H_
-#define _BASE_TYPES_H_
+﻿#pragma once
 
 /* -------------------------------------------------------------
    Базовые скаляры в стиле Win32
    ------------------------------------------------------------- */
-typedef unsigned char    BYTE;
-typedef BYTE    *PBYTE;
-typedef unsigned char    UINT8;
-typedef unsigned int    UINT;
-typedef unsigned int    UINT32;
-typedef int    INT;
-typedef int    INT32;
-typedef int             BOOL;
-typedef float           FLOAT;
-typedef INT            *PINT;
-typedef FLOAT          *PFLOAT;
-typedef const FLOAT    *PCFLOAT;
-typedef void            VOID;
-typedef VOID           *PVOID;
-typedef const VOID     *PCVOID;
+typedef unsigned char BYTE;
+typedef BYTE          *PBYTE;
+typedef unsigned char UINT8;
+typedef unsigned int  UINT;
+typedef unsigned int  UINT32;
+typedef int           INT;
+typedef int           INT32;
+typedef int           BOOL;
+typedef float         FLOAT;
+typedef INT           *PINT;
+typedef UINT          *PUINT;
+typedef FLOAT         *PFLOAT;
+typedef const FLOAT   *PCFLOAT;
+                      
+typedef void          VOID;
+typedef VOID          *PVOID;
+typedef const VOID    *PCVOID;
 
 #ifndef FALSE
-    #define FALSE       0
+    #define FALSE     0
 #endif
 
 #ifndef TRUE
-    #define TRUE        1
+    #define TRUE      1
 #endif
 
 #ifndef CONST
-    #define CONST       const
+    #define CONST     const
 #endif
 
 /* -------------------------------------------------------------
@@ -43,4 +44,3 @@ typedef const LINE_POINT_TYPE* PCLINE_POINT_TYPE;
 #define LinePointType_BezierControl ((LINE_POINT_TYPE)2)    /* Опорная точка Безье        */
 #define LinePointType_Close ((LINE_POINT_TYPE)3)/* Замкнуть текущую подлинию  */
 
-#endif /* _BASE_TYPES_H_ */

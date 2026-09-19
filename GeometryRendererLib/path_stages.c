@@ -11,7 +11,7 @@ VOID
 GR_CALL
 PathStagesInitializeListHead(
     _Out_ PLIST_ENTRY ListHead
-    )
+)
 {
     ListHead->Flink = ListHead;
     ListHead->Blink = ListHead;
@@ -22,7 +22,7 @@ UINT8
 GR_CALL
 PathStagesIsListEmpty(
     _In_ PLIST_ENTRY ListHead
-    )
+)
 {
     return (UINT8)(ListHead->Flink == ListHead);
 }
@@ -33,7 +33,7 @@ GR_CALL
 PathStagesInsertTailList(
     _Inout_ PLIST_ENTRY ListHead,
     _Inout_ PLIST_ENTRY Entry
-    )
+)
 {
     PLIST_ENTRY Blink;
 
@@ -49,7 +49,7 @@ VOID
 GR_CALL
 PathStagesRemoveEntryList(
     _Inout_ PLIST_ENTRY Entry
-    )
+)
 {
     PLIST_ENTRY Flink;
     PLIST_ENTRY Blink;
@@ -68,7 +68,7 @@ VOID
 GR_CALL
 PathStagesInitialize(
     _Out_ PSPathStages PathStages
-    )
+)
 {
     PathStagesInitializeListHead(&PathStages->Head);
     PathStages->Count = 0;
@@ -80,7 +80,7 @@ VOID
 GR_CALL
 PathStagesUninitialize(
     _Inout_ PSPathStages PathStages
-    )
+)
 {
     PathStagesClear(PathStages);
 }
@@ -92,7 +92,7 @@ PSPathStages
 GR_CALL
 PathStagesCreate(
     VOID
-    )
+)
 {
     PSPathStages PathStages;
 
@@ -109,12 +109,12 @@ VOID
 GR_CALL
 PathStagesDestroy(
     _In_opt_ PSPathStages PathStages
-    )
+)
 {
     if (PathStages != NULL)
     {
         PathStagesUninitialize(PathStages);
-        free(PathStages);
+        //free(PathStages);
     }
 }
 
@@ -131,7 +131,7 @@ PathStagesAddStage(
     _In_ EPathStageType StageType,
     _In_ PVOID StageData,
     _In_opt_ PFN_PATH_STAGE_FREE FreeCallback
-    )
+)
 {
     PSPathStageEntry Entry;
     PSPathStageEntry LastStage;
@@ -172,7 +172,7 @@ GR_CALL
 PathStagesRemoveStage(
     _Inout_ PSPathStages PathStages,
     _In_ PSPathStageEntry StageEntry
-    )
+)
 {
     if (PathStages == NULL || StageEntry == NULL)
     {
@@ -194,7 +194,7 @@ VOID
 GR_CALL
 PathStagesClear(
     _Inout_ PSPathStages PathStages
-    )
+)
 {
     PSPathStageEntry Entry;
     PLIST_ENTRY Current;
@@ -234,7 +234,7 @@ PSPathStageEntry
 GR_CALL
 PathStagesGetLastStage(
     _In_ PSPathStages PathStages
-    )
+)
 {
     if (PathStages == NULL || PathStagesIsListEmpty(&PathStages->Head))
     {
@@ -250,7 +250,7 @@ PSPathStageEntry
 GR_CALL
 PathStagesGetFirstStage(
     _In_ PSPathStages PathStages
-    )
+)
 {
     if (PathStages == NULL || PathStagesIsListEmpty(&PathStages->Head))
     {
@@ -264,7 +264,7 @@ UINT32
 GR_CALL
 PathStagesGetCount(
     _In_ PSPathStages PathStages
-    )
+)
 {
     if (PathStages == NULL)
     {
@@ -284,7 +284,7 @@ PathStagesEnum(
     _In_ PSPathStages PathStages,
     _In_ PFN_PATH_STAGE_ENUM Callback,
     _In_opt_ PVOID Context
-    )
+)
 {
     PSPathStageEntry Entry;
 
@@ -317,7 +317,8 @@ PathStagesEntryGetProperty(
     if (IS_LOGICAL_ITEM_PROPS(eProp) 
         && 
         (pEntry->StageType == PathStageTypeLogicalCurve 
-            || pEntry->StageType == PathStageTypeApproximated))
+            || pEntry->StageType == PathStageTypeApproximated
+            || pEntry->StageType == PathStageTypeDashPattern))
     {
         PSLineItem pLine = pEntry->StageData;
 
@@ -326,7 +327,7 @@ PathStagesEntryGetProperty(
             case ESP_IS_CLOSED:
             {
                 iOutLen = sizeof(pLine->ClosePath);
-                pTmpOutData = &pLine->ClosePath;
+                pTmpOutData = (PBYTE) & pLine->ClosePath;
 
                 fResult = TRUE;
                 break;
@@ -344,7 +345,7 @@ PathStagesEntryGetProperty(
                     break;
                 }
 
-                BOOL* val = pTmpOutData;
+                BOOL* val = (BOOL *)pTmpOutData;
 
                 (*val) = (pLine->Type == LineItemType_Bezier);
 
@@ -365,7 +366,7 @@ PathStagesEntryGetProperty(
                     break;
                 }
 
-                INT* val = pTmpOutData;
+                PINT val = (PINT)pTmpOutData;
 
                 (*val) = pLine->PointCount;
 
@@ -378,6 +379,65 @@ PathStagesEntryGetProperty(
                 break;
         }
     }
+    else if (IS_DASH_PATTERN_PROPS(eProp)
+        && pEntry->StageType == PathStageTypeDashPattern)
+    {
+        PSDashPatternItem pDashItem = (PSDashPatternItem)pEntry->StageData;
+
+        __debugbreak();
+
+		if (!pDashItem)
+			return FALSE;
+
+		switch (eProp)
+		{
+			case ESP_DASH_COUNT:
+			{
+				iOutLen = sizeof(INT);
+				pTmpOutData = malloc(iOutLen);
+
+				if (!pTmpOutData)
+				{
+					pTmpOutData = NULL;
+					fResult = FALSE;
+					fIsFree = FALSE;
+					break;
+				}
+
+				INT* val = pTmpOutData;
+				(*val) = (INT)pDashItem->DashCount;
+
+				fIsFree = TRUE;
+				fResult = TRUE;
+				break;
+			}
+
+			case ESP_DASH_OFFSET:
+			{
+				iOutLen = sizeof(FLOAT);
+				pTmpOutData = malloc(iOutLen);
+
+				if (!pTmpOutData)
+				{
+					pTmpOutData = NULL;
+					fResult = FALSE;
+					fIsFree = FALSE;
+					break;
+				}
+
+				FLOAT* val = pTmpOutData;
+				(*val) = pDashItem->DashOffset;
+
+				fIsFree = TRUE;
+				fResult = TRUE;
+				break;
+			}
+
+			default:
+				fResult = FALSE;
+				break;
+		}
+    }
     else
     {
         switch (eProp)
@@ -385,7 +445,7 @@ PathStagesEntryGetProperty(
             case ESP_TYPE:
             {
                 iOutLen = sizeof(pEntry->StageType);
-                pTmpOutData = &pEntry->StageType;
+                pTmpOutData = (PBYTE) & pEntry->StageType;
 
                 fResult = TRUE;
                 break;
@@ -433,6 +493,8 @@ PathStagesGetProperty(
         case EOT_PathStages:
         {
             PSPathStages pStages = pObject;
+
+            __debugbreak();
 
             return FALSE;
         }

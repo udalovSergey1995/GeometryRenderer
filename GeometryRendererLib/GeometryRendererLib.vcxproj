@@ -51,6 +51,7 @@
     <ClInclude Include="base_defs.h" />
     <ClInclude Include="base_object.h" />
     <ClInclude Include="base_types.h" />
+    <ClInclude Include="dash_pattern_item.h" />
     <ClInclude Include="flatten_item.h" />
     <ClInclude Include="GeometryRendererLibInclude.h" />
     <ClInclude Include="line_item.h" />
@@ -61,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="base_object.c" />
+    <ClCompile Include="dash_pattern_item.c" />
     <ClCompile Include="flatten_item.c" />
     <ClCompile Include="line_item.c" />
     <ClCompile Include="path_stages.c" />

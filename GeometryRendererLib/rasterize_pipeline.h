@@ -40,6 +40,22 @@ PathPipeLineFlattenizeLogicalLine(
 	_In_ PSPathPipeLine pPipeline
 );
 
+/*
+* Применить dash pattern к последнему этапу (Logical или Approximated).
+* pDashLengths - массив длин [dash, gap, dash, gap, ...]
+* iDashCount   - количество элементов в массиве (должно быть >= 2)
+* fDashOffset  - смещение начала dash pattern
+*/
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineApplyDashPattern(
+	_In_ PSPathPipeLine pPipeline,
+	_In_reads_(iDashCount) PCFLOAT pDashLengths,
+	_In_ INT iDashCount,
+	_In_ FLOAT fDashOffset
+);
+
 GR_EXPORT
 PSPathStageEntry
 GR_CALL

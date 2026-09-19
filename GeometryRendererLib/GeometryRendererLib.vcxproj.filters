@@ -8,6 +8,7 @@
     <ClCompile Include="base_object.c">
       <Filter>base</Filter>
     </ClCompile>
+    <ClCompile Include="dash_pattern_item.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base_defs.h" />
@@ -24,6 +25,7 @@
     <ClInclude Include="stages_props.h">
       <Filter>base\props</Filter>
     </ClInclude>
+    <ClInclude Include="dash_pattern_item.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="base">

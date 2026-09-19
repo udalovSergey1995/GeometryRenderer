@@ -76,6 +76,21 @@ namespace GeometryRenderer.NET.Bindings.Types
         {}
     }
 
+    public class PipeDashedLineStage : PipeLogicalLineStage
+    {
+        public int DashCount
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.DashCount);
+        public int DashOffset
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.DashOffset);
+
+        public PipeDashedLineStage(IntPtr nativeOblect) : base(nativeOblect)
+        { }
+    }
+
     public class PipeLineObject : IDisposable
     {
         private IntPtr _nativeObject = IntPtr.Zero;
@@ -108,6 +123,8 @@ namespace GeometryRenderer.NET.Bindings.Types
                             break;
 
                         case EPathStageType.PathStageTypeDashPattern:
+                            yield return new PipeDashedLineStage(item);
+                            break;
                         case EPathStageType.PathStageTypeThickLine:
                         default:
                             yield return new PipeLineStage(item);
@@ -204,6 +221,26 @@ namespace GeometryRenderer.NET.Bindings.Types
 
             int result = Native.PathPipeLineFlattenizeLogicalLine(_nativeObject);
             
+            if (result != 1)
+            {
+                throw new Exception("Ошибка апроксимации");
+            }
+        }
+
+        public void SetDashPatten(float[] pattern, float offset = 0.0f)
+        {
+            if (CurrentStage.StageType != EPathStageType.PathStageTypeLogicalCurve
+                && CurrentStage.StageType != EPathStageType.PathStageTypeApproximated)
+            {
+                throw new Exception("Текущее состояние пайплайна недопускает данную операцию");
+            }
+
+            int result = Native.PathPipeLineApplyDashPattern(
+                _nativeObject,
+                pattern,
+                pattern.Length,
+                offset);
+
             if (result != 1)
             {
                 throw new Exception("Ошибка апроксимации");

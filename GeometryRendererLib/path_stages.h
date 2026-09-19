@@ -1,7 +1,5 @@
 ﻿/* path_stages.h — контейнер этапов преобразования пути (Win32-стиль, SAL2, чистый C)  */
-
-#ifndef PATH_STAGES_H
-#define PATH_STAGES_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -185,5 +183,3 @@ PathStagesGetProperty(
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* PATH_STAGES_H */
