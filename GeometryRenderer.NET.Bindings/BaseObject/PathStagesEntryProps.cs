@@ -4,13 +4,23 @@
     {
         Bad,
         Type,
-        IsClosed = 3,
+
+        LogicalItemPropsStart,
+
+        IsClosed = LogicalItemPropsStart + 1,
+
         IsBeziere,
 
-        DashCount = 8,
+        PathLen,
+
+        PathData,
+
+        PathFlags,
+
+        DashItemPropsStart,
+
+        DashCount = DashItemPropsStart + 1,
 
         DashOffset,
-
-        PointsCount
     }
 }

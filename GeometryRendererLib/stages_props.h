@@ -14,7 +14,11 @@ typedef enum _EStageProps
 
 		ESP_IS_BESIERE,
 
-		ESP_POINTS_COUNT,
+		ESP_PATH_LEN,
+
+		ESP_PATH_DATA,
+
+		ESP_PATH_FLAGS,
 
 	ESP_LOGICAL_ITEM_END,
 

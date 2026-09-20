@@ -61,10 +61,20 @@ namespace GeometryRenderer.NET.Bindings.Types
                     base._nativeObject,
                     (int)PathStagesEntryProps.IsClosed) == 1;
 
-        public int PointsCount
+        public int PathLen
             => BaseNativeObject.GetObjectPropertyInt(
                     base._nativeObject,
-                    (int)PathStagesEntryProps.PointsCount);
+                    (int)PathStagesEntryProps.PathLen);
+
+        public GRNativePoint[] Path 
+            => BaseNativeObject.GetObjectPropertyPath(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.PathData);
+
+        public byte[] PathFlags 
+            => BaseNativeObject.GetObjectPropertyBytes(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.PathFlags);
 
         public PipeLogicalLineStage(IntPtr nativeOblect) : base(nativeOblect)
         {}
@@ -136,8 +146,7 @@ namespace GeometryRenderer.NET.Bindings.Types
             }
         }
 
-        public PipeLineStage CurrentStage 
-            => new PipeLineStage(NativeEnumerators.PathPipeLineGetLastStage(_nativeObject));
+        public PipeLineStage CurrentStage => StageList.Last();
 
         /// <summary>
         /// Создать объект графического пайплайна

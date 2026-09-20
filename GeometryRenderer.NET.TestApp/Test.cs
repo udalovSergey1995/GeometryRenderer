@@ -295,9 +295,17 @@ namespace GeometryRenderer.NET.TestApp
 
                 plType = pl.CurrentStage.StageType;
 
+                var pts = (pl.CurrentStage as PipeLogicalLineStage)?.Path;
+
+                var flags = (pl.CurrentStage as PipeLogicalLineStage)?.PathFlags;
+
                 pl.SetDashPatten(new[] { 1f, 1f });
 
                 plType = pl.CurrentStage.StageType;
+
+                pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
+
+                flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
             }
         }
     }

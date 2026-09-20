@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GeometryRenderer.NET.Bindings.Types;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -21,7 +22,7 @@ namespace GeometryRenderer.NET.Bindings
         [DllImport(
             GeometryRendererDll,
             CallingConvention = CallingConvention.Cdecl)]
-        private static extern int GetObjectProperty(
+        internal static extern int GetObjectProperty(
             IntPtr pObject,
             int eProp,
             IntPtr pOutData,
@@ -34,7 +35,7 @@ namespace GeometryRenderer.NET.Bindings
             int requiredSize = 0;
             int result = GetObjectProperty(pObject, propertyId, IntPtr.Zero, ref requiredSize);
 
-            if (result != 0)
+            if (result == 0)
                 throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
             if (requiredSize <= 0)
@@ -49,7 +50,7 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = requiredSize;
                 result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result != 0)
+                if (result == 0)
                     throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
                 if (bufferSize > requiredSize)
@@ -69,6 +70,42 @@ namespace GeometryRenderer.NET.Bindings
             finally
             {
                 Marshal.FreeHGlobal(ptr);
+            }
+        }
+
+        public static GRNativePoint[] GetObjectPropertyPath(IntPtr pObject, int propertyId)
+        {
+            // Шаг 1: Получаем необходимый размер буфера
+            int requiredSize = 0;
+            int result = GetObjectProperty(pObject, propertyId, IntPtr.Zero, ref requiredSize);
+
+            if (result != 1)
+                throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
+
+            if (requiredSize <= 0)
+                return new GRNativePoint[0];
+
+            requiredSize = requiredSize / 2 / sizeof(float);
+
+            // Шаг 2: Выделяем буфер и получаем данные
+            GRNativePoint[] buffer = new GRNativePoint[requiredSize];
+            
+            var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+            IntPtr ptr = handle.AddrOfPinnedObject(); //Marshal.AllocHGlobal(requiredSize);
+
+            try
+            {
+                int bufferSize = requiredSize;
+                result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
+
+                if (result == 0)
+                    throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
+
+                return buffer;
+            }
+            finally
+            {
+                handle.Free();
             }
         }
 

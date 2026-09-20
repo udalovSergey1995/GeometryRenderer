@@ -299,6 +299,15 @@ PathStagesEnum(
     }
 }
 
+VOID
+GR_CALL
+PathStagesgetPathLen(
+    _In_ PSLineItem pLine
+)
+{
+
+}
+
 BOOL
 GR_CALL
 PathStagesEntryGetProperty(
@@ -353,7 +362,7 @@ PathStagesEntryGetProperty(
                 fResult = TRUE;
                 break;
             }
-            case ESP_POINTS_COUNT:
+            case ESP_PATH_LEN:
             {
                 iOutLen = sizeof(pLine->PointCount);
                 pTmpOutData = malloc(sizeof(INT));
@@ -374,6 +383,23 @@ PathStagesEntryGetProperty(
                 fResult = TRUE;
                 break;
             }
+            case ESP_PATH_DATA:
+            {
+                iOutLen = pLine->PointCount * 2 * sizeof(float);
+                pTmpOutData = pLine->Points;
+
+                fResult = TRUE;
+                break;
+            }
+            case ESP_PATH_FLAGS:
+            {
+                iOutLen = pLine->PointCount;
+                pTmpOutData = pLine->PointTypes;
+
+                fResult = TRUE;
+                break;
+            }
+
             default:
                 fResult = FALSE;
                 break;
