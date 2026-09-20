@@ -274,16 +274,16 @@ namespace GeometryRenderer.NET.TestApp
                 float[] points = new float[]
                 {
                     0.0f,   0.0f,   // P0  (Move)
-                    //50.0f,  100.0f, // C1  (BezierControl)
-                    //150.0f, 100.0f, // C2  (BezierControl)
+                    50.0f,  100.0f, // C1  (BezierControl)
+                    150.0f, 100.0f, // C2  (BezierControl)
                     200.0f, 0.0f    // P3  (Line)
                 };
 
                 byte[] types = new[]
                 {
                     (byte)LinePointType.Move,
-                    //(byte)LinePointType.BezierControl,
-                    //(byte)LinePointType.BezierControl,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.BezierControl,
                     (byte)LinePointType.Line
                 };
 
@@ -291,13 +291,17 @@ namespace GeometryRenderer.NET.TestApp
 
                 var plType = pl.CurrentStage.StageType;
 
-                //pl.FlettenizePath();
-
-                plType = pl.CurrentStage.StageType;
-
                 var pts = (pl.CurrentStage as PipeLogicalLineStage)?.Path;
 
                 var flags = (pl.CurrentStage as PipeLogicalLineStage)?.PathFlags;
+
+                pl.FlettenizePath();
+
+                plType = pl.CurrentStage.StageType;
+
+                pts = (pl.CurrentStage as PipeApproximatedLineStage)?.Path;
+
+                flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
                 pl.SetDashPatten(new[] { 1f, 1f });
 
