@@ -62,7 +62,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
-                pl.SetDashPatten(new[] { 5f, 50f });
+                pl.SetDashPatten(new[] { 10f, 10f });
 
                 plType = pl.CurrentStage.StageType;
 
@@ -80,3 +80,4 @@ namespace GeometryRenderer.NET.TestApp
         }
     }
 }
+

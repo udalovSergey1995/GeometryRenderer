@@ -284,8 +284,20 @@ DashPatternInterpolate(
 }
 
 /* -------------------------------------------------------------
-   Разбиение одного отрезка по dash pattern.
-   Текущее состояние (сегмент, остаток) передаётся и обновляется.
+   Разбиение одного отрезка (X0,Y0) → (X1,Y1) по dash-паттерну.
+
+   Принцип работы:
+   - Мы идём по отрезку, накапливая пройденное расстояние (traveled).
+   - В зависимости от текущего элемента паттерна (dash или gap)
+     либо добавляем точки в буфер, либо просто "пропускаем" расстояние.
+   - Move (0) ставится ТОЛЬКО в момент начала нового видимого
+     dash-сегмента. Это критически важно для совместимости с GDI+.
+   - В gap мы ничего не пишем в буфер — только двигаем текущую позицию.
+
+   Состояние паттерна (текущий индекс и остаток) передаётся
+   через pSegmentIndex / pSegmentRemain и сохраняется между
+   вызовами функции (чтобы паттерн корректно продолжался
+   на следующем отрезке пути).
    ------------------------------------------------------------- */
 static
 BOOL
@@ -302,17 +314,20 @@ DashPatternSplitSegment(
     _Inout_ PDASH_BUFFER    Buffer
 )
 {
-    FLOAT segLen;
-    FLOAT curX;
-    FLOAT curY;
-    FLOAT remainInSeg;
-    FLOAT remainInDash;
-    FLOAT step;
-    UINT segIdx;
-    BOOL isDash;
-    FLOAT ix;
-    FLOAT iy;
+    FLOAT segLen;           // длина текущего геометрического отрезка
+    FLOAT curX, curY;       // текущая позиция "пера"
+    FLOAT remainInSeg;      // сколько ещё осталось пройти по этому отрезку
+    FLOAT remainInDash;     // сколько осталось в текущем элементе паттерна (dash/gap)
+    FLOAT step;             // сколько пройдём на этой итерации
+    FLOAT traveled;         // сколько уже прошли от начала отрезка (0..segLen)
+    UINT  segIdx;           // индекс текущего элемента в DashLengths
+    BOOL  isDash;           // TRUE = сейчас рисуем, FALSE = сейчас gap
+    FLOAT ix, iy;           // интерполированная точка
+    FLOAT t;                // параметр интерполяции [0..1]
 
+    //----------------------------------------------------------
+    // 1. Считаем длину отрезка. Если он вырожденный — выходим.
+    //----------------------------------------------------------
     segLen = DashPatternSegmentLength(X0, Y0, X1, Y1);
 
     if (segLen < DASH_PATTERN_EPSILON)
@@ -320,38 +335,93 @@ DashPatternSplitSegment(
         return TRUE;
     }
 
+    //----------------------------------------------------------
+    // 2. Инициализация состояния
+    //----------------------------------------------------------
     curX = X0;
     curY = Y0;
     remainInSeg = segLen;
+    traveled = 0.0f;
+
     segIdx = *pSegmentIndex;
     remainInDash = DashLengths[segIdx] - *pSegmentRemain;
 
+    // Если в текущем элементе паттерна почти ничего не осталось —
+    // сразу переходим к следующему
     if (remainInDash < DASH_PATTERN_EPSILON)
     {
         segIdx = (segIdx + 1) % DashCount;
         remainInDash = DashLengths[segIdx];
     }
 
+    // Чётные индексы (0,2,4...) — dash, нечётные — gap
     isDash = ((segIdx % 2) == 0);
 
+    //----------------------------------------------------------
+    // 3. Основной цикл: идём по отрезку, пока он не закончится
+    //----------------------------------------------------------
     while (remainInSeg > DASH_PATTERN_EPSILON)
     {
-        step = remainInSeg < remainInDash ? remainInSeg : remainInDash;
+        // Сколько можем пройти на этой итерации
+        step = (remainInSeg < remainInDash) ? remainInSeg : remainInDash;
 
-        DashPatternInterpolate(X0, Y0, X1, Y1, step / segLen, &ix, &iy);
+        // Накапливаем пройденное расстояние от начала отрезка
+        traveled += step;
+
+        // Параметр t для линейной интерполяции (с защитой от float-ошибок)
+        t = traveled / segLen;
+        if (t > 1.0f) t = 1.0f;
+
+        // Получаем абсолютные координаты точки на отрезке
+        DashPatternInterpolate(X0, Y0, X1, Y1, t, &ix, &iy);
 
         if (isDash)
         {
-            if (Buffer->Count == 0 ||
-                Buffer->Types[Buffer->Count - 1] == LinePointType_Move ||
-                Buffer->Types[Buffer->Count - 1] == LinePointType_Close)
+            //--------------------------------------------------
+            // Мы находимся в режиме "рисуем" (dash)
+            //--------------------------------------------------
+
+            // Нужно ли начинать новый subpath (ставить Move)?
+            // Ставим Move только если:
+            //   - буфер пустой
+            //   - или последняя точка была Move (уже начали, но ещё не рисовали)
+            //   - или предыдущий сегмент был gap (тогда последняя точка
+            //     в буфере относится к предыдущему dash)
+            BOOL needMove = FALSE;
+
+            if (Buffer->Count == 0)
             {
+                needMove = TRUE;
+            }
+            else
+            {
+                BYTE lastType = Buffer->Types[Buffer->Count - 1];
+
+                // Если последняя точка — Move, значит мы уже поставили
+                // начало, но ещё не добавили ни одной Line.
+                // В этом случае Move ставить не нужно.
+                if (lastType == LinePointType_Move)
+                {
+                    needMove = FALSE;
+                }
+                else
+                {
+                    // Последняя точка была Line → значит предыдущий
+                    // видимый сегмент закончился. Начинаем новый.
+                    needMove = TRUE;
+                }
+            }
+
+            if (needMove)
+            {
+                // Начинаем новый видимый штрих
                 if (!DashBufferAppendPoint(Buffer, curX, curY, LinePointType_Move))
                 {
                     return FALSE;
                 }
             }
 
+            // Добавляем конечную точку текущего кусочка dash
             if (!DashBufferAppendPoint(Buffer, ix, iy, LinePointType_Line))
             {
                 return FALSE;
@@ -359,30 +429,37 @@ DashPatternSplitSegment(
         }
         else
         {
-            if (Buffer->Count > 0 &&
-                Buffer->Types[Buffer->Count - 1] != LinePointType_Move &&
-                Buffer->Types[Buffer->Count - 1] != LinePointType_Close)
-            {
-                if (!DashBufferAppendPoint(Buffer, curX, curY, LinePointType_Move))
-                {
-                    return FALSE;
-                }
-            }
+            //--------------------------------------------------
+            // Мы находимся в режиме "gap" (пропуск)
+            //--------------------------------------------------
+            // Ничего не пишем в буфер.
+            // Просто передвигаем "перо".
+            // Следующий dash сам поставит Move, когда начнётся.
         }
 
-        curX += ix;
-        curY += iy;
+        // Обновляем текущую позицию пера
+        curX = ix;
+        curY = iy;
+
+        // Уменьшаем остатки
         remainInSeg -= step;
         remainInDash -= step;
 
+        //------------------------------------------------------
+        // Переход к следующему элементу паттерна
+        //------------------------------------------------------
         if (remainInDash <= DASH_PATTERN_EPSILON && remainInSeg > DASH_PATTERN_EPSILON)
         {
+            // Текущий dash/gap закончился, а отрезок ещё есть
             segIdx = (segIdx + 1) % DashCount;
             remainInDash = DashLengths[segIdx];
             isDash = ((segIdx % 2) == 0);
         }
     }
 
+    //----------------------------------------------------------
+    // 4. Сохраняем состояние паттерна для следующего отрезка
+    //----------------------------------------------------------
     *pSegmentIndex = segIdx;
 
     if (remainInDash <= DASH_PATTERN_EPSILON)
@@ -391,6 +468,7 @@ DashPatternSplitSegment(
     }
     else
     {
+        // Сколько уже "съели" из текущего элемента паттерна
         *pSegmentRemain = DashLengths[segIdx] - remainInDash;
     }
 
@@ -592,14 +670,6 @@ DashPatternItemCreateInternal(
     if (dashedLine == NULL)
     {
         return NULL;
-    }
-
-    for (size_t i = 0; i < dashedLine->PointCount; i+=2)
-    {
-        FLOAT X = dashedLine->Points[i];
-        FLOAT Y = dashedLine->Points[i + 1];
-
-        FLOAT t = X + Y;
     }
 
     dashItem = (PSDashPatternItem)malloc(sizeof(SDashPatternItem));

@@ -13,6 +13,10 @@
   </Folder>
   <Project Path="GeometryRenderer.NET.Bindings/GeometryRenderer.NET.Bindings.csproj" Id="73648693-c03f-433d-aba7-88dc053b3a67">
     <BuildDependency Project="GeometryRenderer/GeometryRenderer.vcxproj" />
+    <BuildDependency Project="GeometryRendererLib/GeometryRendererLib.vcxproj" />
   </Project>
-  <Project Path="GeometryRenderer.NET.TestApp/GeometryRenderer.NET.TestApp.csproj" Id="7c106803-703b-40a8-ab9d-a57eac51b8de" />
+  <Project Path="GeometryRenderer.NET.TestApp/GeometryRenderer.NET.TestApp.csproj" Id="7c106803-703b-40a8-ab9d-a57eac51b8de">
+    <BuildDependency Project="GeometryRenderer/GeometryRenderer.vcxproj" />
+    <BuildDependency Project="GeometryRendererLib/GeometryRendererLib.vcxproj" />
+  </Project>
 </Solution>

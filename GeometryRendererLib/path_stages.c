@@ -490,7 +490,7 @@ PathStagesEntryGetProperty(
 					break;
 				}
 
-				INT* val = pTmpOutData;
+				INT* val = (PINT)pTmpOutData;
 				(*val) = (INT)pDashItem->DashCount;
 
 				fIsFree = TRUE;
@@ -511,7 +511,7 @@ PathStagesEntryGetProperty(
 					break;
 				}
 
-				FLOAT* val = pTmpOutData;
+				FLOAT* val = (PFLOAT)pTmpOutData;
 				(*val) = pDashItem->DashOffset;
 
 				fIsFree = TRUE;
