@@ -16,5 +16,8 @@
 #include "path_stages.h"
 #include "line_item.h"
 #include "flatten_item.h"
-#include "rasterize_pipeline.h"
 #include "dash_pattern_item.h"
+#include "thick_line_item.h"
+
+#include "rasterize_pipeline.h"
+

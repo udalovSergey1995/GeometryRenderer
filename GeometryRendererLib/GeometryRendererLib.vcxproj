@@ -59,6 +59,7 @@
     <ClInclude Include="stages_props.h" />
     <ClInclude Include="rasterize_pipeline.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="thick_line_item.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="base_object.c" />
@@ -67,6 +68,11 @@
     <ClCompile Include="line_item.c" />
     <ClCompile Include="path_stages.c" />
     <ClCompile Include="rasterize_pipeline.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="thick_line_item.c">
+      <FileType>CppCode</FileType>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

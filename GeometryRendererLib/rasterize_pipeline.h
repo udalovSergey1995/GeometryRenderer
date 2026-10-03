@@ -70,3 +70,23 @@ GR_CALL
 PathPipeLineGetLastStage(
 	_In_ PSPathPipeLine pPipeline
 );
+
+/*
+ * Применить генерацию толстой линии к последнему этапу
+ * (LogicalCurve или Approximated / DashPattern).
+ *
+ * Thickness  - толщина линии
+ * JoinStyle  - стиль соединения (Miter/Round/Bevel)
+ * CapStyle   - стиль окончания (Flat/Round/Square)
+ * MiterLimit - ограничение miter (имеет смысл только для Miter)
+ */
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineApplyThickLine(
+	_In_ PSPathPipeLine     pPipeline,
+	_In_ FLOAT              Thickness,
+	_In_ THICK_LINE_JOIN    JoinStyle,
+	_In_ THICK_LINE_CAP     CapStyle,
+	_In_ FLOAT              MiterLimit
+);

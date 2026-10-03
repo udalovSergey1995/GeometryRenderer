@@ -74,7 +74,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
-                pl.SetDashPatten(new[] { 10f * mult, 10f * mult, 5f * mult, 30f * mult });
+                pl.SetDashPatten(new[] { 3 * mult, 3 * mult });
 
                 plType = pl.CurrentStage.StageType;
 
@@ -82,12 +82,27 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
 
+                pl.SetThickLine(5f);
+
+                plType = pl.CurrentStage.StageType;
+
+                pts = (pl.CurrentStage as PipeThickLineStage)?.Path;
+
+                flags = (pl.CurrentStage as PipeThickLineStage)?.PathFlags;
+
                 var wPts = GetPts(pts);
 
                 var gp = new GraphicsPath(wPts, flags);
 
-                e.Graphics.DrawPath(Pens.Red, gp);
-
+                if (plType == EPathStageType.PathStageTypeThickLine)
+                {
+                    gp.FillMode = FillMode.Winding;
+                    e.Graphics.FillPath(Brushes.Red, gp);
+                }
+                else
+                {
+                    e.Graphics.DrawPath(Pens.Red, gp);
+                }
             }
         }
     }

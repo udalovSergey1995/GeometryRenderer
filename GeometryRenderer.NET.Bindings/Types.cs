@@ -28,13 +28,27 @@ namespace GeometryRenderer.NET.Bindings.Types
         }
     }
 
-    public enum EPathStageType
+    public enum EPathStageType : int
     {
         PathStageTypeInvalid = 0,
         PathStageTypeLogicalCurve,
         PathStageTypeApproximated,
         PathStageTypeDashPattern,
         PathStageTypeThickLine
+    }
+
+    public enum ThickLineJoin : int
+    {
+        Miter = 0,
+        Round = 1,
+        Bevel = 2
+    }
+
+    public enum ThickLineCap
+    {
+        Flat = 0,    // Butt
+        Round = 1,
+        Square = 2
     }
 
     public class PipeLineStage
@@ -100,12 +114,39 @@ namespace GeometryRenderer.NET.Bindings.Types
             => BaseNativeObject.GetObjectPropertyInt(
                     base._nativeObject,
                     (int)PathStagesEntryProps.DashCount);
+
         public int DashOffset
             => BaseNativeObject.GetObjectPropertyInt(
                     base._nativeObject,
                     (int)PathStagesEntryProps.DashOffset);
 
         public PipeDashedLineStage(IntPtr nativeOblect) : base(nativeOblect)
+        { }
+    }
+
+    public class PipeThickLineStage : PipeLogicalLineStage
+    {
+        public float Thickness
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.Thicknes);
+
+        public int JoinStyle
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.JounStyle);
+
+        public int CapStyle
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.CapStyle);
+
+        public float MiterLimit
+            => BaseNativeObject.GetObjectPropertyInt(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.MiterLimit);
+
+        public PipeThickLineStage(IntPtr nativeOblect) : base(nativeOblect)
         { }
     }
 
@@ -143,7 +184,11 @@ namespace GeometryRenderer.NET.Bindings.Types
                         case EPathStageType.PathStageTypeDashPattern:
                             yield return new PipeDashedLineStage(item);
                             break;
+
                         case EPathStageType.PathStageTypeThickLine:
+                            yield return new PipeThickLineStage(item);
+                            break;
+
                         default:
                             yield return new PipeLineStage(item);
                             break;
@@ -266,8 +311,7 @@ namespace GeometryRenderer.NET.Bindings.Types
 
         public void SetDashPatten(float[] pattern, float offset = 0.0f)
         {
-            if (CurrentStage.StageType != EPathStageType.PathStageTypeLogicalCurve
-                && CurrentStage.StageType != EPathStageType.PathStageTypeApproximated)
+            if (CurrentStage.StageType != EPathStageType.PathStageTypeApproximated)
             {
                 throw new Exception("Текущее состояние пайплайна недопускает данную операцию");
             }
@@ -281,6 +325,30 @@ namespace GeometryRenderer.NET.Bindings.Types
             if (result != 1)
             {
                 throw new Exception("Ошибка апроксимации");
+            }
+        }
+
+        public void SetThickLine(float thickness,
+                         ThickLineJoin join = ThickLineJoin.Miter,
+                         ThickLineCap cap = ThickLineCap.Flat,
+                         float miterLimit = 10.0f)
+        {
+            if (CurrentStage.StageType != EPathStageType.PathStageTypeDashPattern
+                && CurrentStage.StageType != EPathStageType.PathStageTypeApproximated)
+            {
+                throw new Exception("Текущее состояние пайплайна недопускает данную операцию");
+            }
+
+            int result = Native.PathPipeLineApplyThickLine(
+                _nativeObject,
+                thickness,
+                (int)join,
+                (int)cap,
+                miterLimit);
+
+            if (result != 1)
+            {
+                throw new Exception("Ошибка применения толщины");
             }
         }
 

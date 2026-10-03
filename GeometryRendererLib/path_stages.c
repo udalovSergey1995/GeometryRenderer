@@ -346,6 +346,24 @@ PathStagesGetPathData(
 
             break;
         }
+        case PathStageTypeThickLine:
+        {
+            PSThickLineItem pThick = (PSThickLineItem)pEntry->StageData;
+
+            ASSERT(pThick && pThick->ThickGeometry);
+
+            pLine = pThick->ThickGeometry;
+
+            if (pDataMemLen)
+                (*pDataMemLen) = pLine->PointCount * 2 * sizeof(float);
+
+            if (pFlagsMemLen)
+                (*pFlagsMemLen) = pLine->PointCount;
+
+            pTmpOutData = pLine->Points;
+            pTmpOutFlags = pLine->PointTypes;
+            break;
+        }
         default:
         {
             pLine = pEntry->StageData;
@@ -391,7 +409,8 @@ PathStagesEntryGetProperty(
         && 
         (pEntry->StageType == PathStageTypeLogicalCurve 
             || pEntry->StageType == PathStageTypeApproximated
-            || pEntry->StageType == PathStageTypeDashPattern))
+            || pEntry->StageType == PathStageTypeDashPattern
+            || pEntry->StageType == PathStageTypeThickLine))
     {
         PSLineItem pLine = pEntry->StageData;
 
@@ -523,6 +542,64 @@ PathStagesEntryGetProperty(
 				fResult = FALSE;
 				break;
 		}
+    }
+    else if (IS_THICK_LINE_PROPS(eProp) 
+        && pEntry->StageType == PathStageTypeThickLine)
+    {
+        PSThickLineItem pThick = (PSThickLineItem)pEntry->StageData;
+        if (!pThick)
+            return FALSE;
+    
+        switch (eProp)
+        {
+            case ESP_THICKNESS:
+            {
+                iOutLen = sizeof(FLOAT);
+                pTmpOutData = malloc(iOutLen);
+                if (!pTmpOutData) { fResult = FALSE; break; }
+    
+                *((FLOAT*)pTmpOutData) = pThick->Thickness;
+                fIsFree = TRUE;
+                fResult = TRUE;
+                break;
+            }
+            case ESP_JOIN_STYLE:
+            {
+                iOutLen = sizeof(INT);
+                pTmpOutData = malloc(iOutLen);
+                if (!pTmpOutData) { fResult = FALSE; break; }
+    
+                *((INT*)pTmpOutData) = (INT)pThick->JoinStyle;
+                fIsFree = TRUE;
+                fResult = TRUE;
+                break;
+            }
+            case ESP_CAP_STYLE:
+            {
+                iOutLen = sizeof(INT);
+                pTmpOutData = malloc(iOutLen);
+                if (!pTmpOutData) { fResult = FALSE; break; }
+    
+                *((INT*)pTmpOutData) = (INT)pThick->CapStyle;
+                fIsFree = TRUE;
+                fResult = TRUE;
+                break;
+            }
+            case ESP_MITER_LIMIT:
+            {
+                iOutLen = sizeof(FLOAT);
+                pTmpOutData = malloc(iOutLen);
+                if (!pTmpOutData) { fResult = FALSE; break; }
+    
+                *((FLOAT*)pTmpOutData) = pThick->MiterLimit;
+                fIsFree = TRUE;
+                fResult = TRUE;
+                break;
+            }
+            default:
+                fResult = FALSE;
+                break;
+        }
     }
     else
     {

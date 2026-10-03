@@ -7,20 +7,30 @@
 
         LogicalItemPropsStart,
 
-        IsClosed = LogicalItemPropsStart + 1,
+            IsClosed = LogicalItemPropsStart + 1,
 
-        IsBeziere,
+            IsBeziere,
 
-        PathLen,
+            PathLen,
 
-        PathData,
+            PathData,
 
-        PathFlags,
+            PathFlags,
 
         DashItemPropsStart = 9,
 
-        DashCount,
+            DashCount,
 
-        DashOffset,
+            DashOffset,
+
+        ThickPropsStart = 13,
+
+            Thicknes,
+
+            JounStyle,
+
+            CapStyle,
+
+            MiterLimit
     }
 }

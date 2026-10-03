@@ -90,5 +90,16 @@ namespace GeometryRenderer.NET.Bindings
             float[] dashLengths,
             int dashCount,
             float dashOffset);
+
+        [DllImport(
+            NtivePinvokeDefs.GeometryRendererDll,
+            CallingConvention = CallingConvention.StdCall,
+            EntryPoint = "PathPipeLineApplyThickLine")]
+        public static extern int PathPipeLineApplyThickLine(
+            IntPtr pPipeLine,
+            float thicknes,
+            int join,
+            int cap,
+            float miterLimit);
     }
 }

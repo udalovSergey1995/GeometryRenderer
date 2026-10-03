@@ -9,6 +9,7 @@
       <Filter>base</Filter>
     </ClCompile>
     <ClCompile Include="dash_pattern_item.c" />
+    <ClCompile Include="thick_line_item.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="base_defs.h" />
@@ -26,6 +27,7 @@
       <Filter>base\props</Filter>
     </ClInclude>
     <ClInclude Include="dash_pattern_item.h" />
+    <ClInclude Include="thick_line_item.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="base">

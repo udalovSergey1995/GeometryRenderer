@@ -252,3 +252,90 @@ PathPipeLineGetLastStage(
 
 	return PathStagesGetLastStage(&pPipeline->m_sPathStages);
 }
+
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineApplyThickLine(
+	_In_ PSPathPipeLine     pPipeline,
+	_In_ FLOAT              Thickness,
+	_In_ THICK_LINE_JOIN    JoinStyle,
+	_In_ THICK_LINE_CAP     CapStyle,
+	_In_ FLOAT              MiterLimit
+)
+{
+	PSPathStageEntry pCurrentItem;
+	PSThickLineItem  pThickItem;
+	PSLineItem       pSourceLine;
+
+	if (!pPipeline || Thickness <= 0.0f)
+		return FALSE;
+
+	if (!pPipeline->m_sPathStages.Count)
+		return FALSE;
+
+	pCurrentItem = PathStagesGetLastStage(&pPipeline->m_sPathStages);
+	if (!pCurrentItem)
+		return FALSE;
+
+	// Можно применять к LogicalCurve, Approximated или DashPattern
+	if (pCurrentItem->StageType != PathStageTypeLogicalCurve &&
+		pCurrentItem->StageType != PathStageTypeApproximated &&
+		pCurrentItem->StageType != PathStageTypeDashPattern)
+	{
+		return FALSE;
+	}
+
+	// Получаем исходную геометрию
+	if (pCurrentItem->StageType == PathStageTypeDashPattern)
+	{
+		PSDashPatternItem pDash = (PSDashPatternItem)pCurrentItem->StageData;
+		if (!pDash || !pDash->DashedLine)
+			return FALSE;
+
+		pSourceLine = pDash->DashedLine;
+	}
+	else
+	{
+		pSourceLine = (PSLineItem)pCurrentItem->StageData;
+	}
+
+	if (!pSourceLine)
+		return FALSE;
+
+	// Создаём thick-айтем
+	if (pCurrentItem->StageType == PathStageTypeLogicalCurve)
+	{
+		// На всякий случай можно проверить отсутствие Безье
+		pThickItem = ThickLineItemInit(
+			pSourceLine,
+			Thickness,
+			JoinStyle,
+			CapStyle,
+			MiterLimit);
+	}
+	else
+	{
+		pThickItem = ThickLineItemInitFromFlatten(
+			pSourceLine,
+			Thickness,
+			JoinStyle,
+			CapStyle,
+			MiterLimit);
+	}
+
+	if (!pThickItem)
+		return FALSE;
+
+	if (!PathStagesAddStage(
+		&pPipeline->m_sPathStages,
+		PathStageTypeThickLine,
+		pThickItem,
+		ThickLineItemFreeCallback))
+	{
+		ThickLineItemFree(pThickItem);
+		return FALSE;
+	}
+
+	return TRUE;
+}
