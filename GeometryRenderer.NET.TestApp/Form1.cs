@@ -1,3 +1,7 @@
+using GeometryRenderer.NET.Bindings;
+using GeometryRenderer.NET.Bindings.Types;
+using System.Drawing.Drawing2D;
+
 namespace GeometryRenderer.NET.TestApp
 {
     public partial class Form1 : Form
@@ -9,9 +13,70 @@ namespace GeometryRenderer.NET.TestApp
             this.Paint += Form1_Paint;
         }
 
+        private static PointF[] GetPts(GRNativePoint[] nPts)
+        {
+            var pts = new PointF[nPts.Length];
+
+            for (int i = 0; i < nPts.Length; i++) 
+            {
+                pts[i].X = nPts[i].X;
+                pts[i].Y = nPts[i].Y;
+            }
+
+            return pts;
+        }
+
         private void Form1_Paint(object? sender, PaintEventArgs e)
         {
+            using (var pl = new PipeLineObject())
+            {
+                float[] points = new float[]
+                {
+                    5.0f,   5.0f,   // P0  (Move)
+                    50.0f,  100.0f, // C1  (BezierControl)
+                    150.0f, 100.0f, // C2  (BezierControl)
+                    200.0f, 5.0f    // P3  (Line)
+                };
 
+                byte[] types = new[]
+                {
+                    (byte)LinePointType.Move,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.Line
+                };
+
+                pl.AddBezierePath(points, types, false);
+
+                var plType = pl.CurrentStage.StageType;
+
+                var pts = (pl.CurrentStage as PipeLogicalLineStage)?.Path;
+
+                var flags = (pl.CurrentStage as PipeLogicalLineStage)?.PathFlags;
+
+                pl.FlettenizePath();
+
+                plType = pl.CurrentStage.StageType;
+
+                pts = (pl.CurrentStage as PipeApproximatedLineStage)?.Path;
+
+                flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
+
+                pl.SetDashPatten(new[] { 5f, 50f });
+
+                plType = pl.CurrentStage.StageType;
+
+                pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
+
+                flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
+
+                var wPts = GetPts(pts);
+
+                var gp = new GraphicsPath(wPts, flags);
+
+                e.Graphics.DrawPath(Pens.Red, gp);
+
+            }
         }
     }
 }

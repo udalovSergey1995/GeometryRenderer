@@ -273,7 +273,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 float[] points = new float[]
                 {
-                    0.0f,   0.0f,   // P0  (Move)
+                    5.0f,   0.0f,   // P0  (Move)
                     50.0f,  100.0f, // C1  (BezierControl)
                     150.0f, 100.0f, // C2  (BezierControl)
                     200.0f, 0.0f    // P3  (Line)
