@@ -30,17 +30,19 @@ namespace GeometryRenderer.NET.TestApp
         {
             using (var pl = new PipeLineObject())
             {
+                float mult = 3f;
+
                 float[] points = new float[]
                 {
-                    5.0f,   5.0f,   // P0  (Move)
-                    50.0f,  100.0f, // C1  (BezierControl)
-                    150.0f, 100.0f, // C2  (BezierControl)
-                    200.0f, 5.0f,    // P3  (Line)
+                    5.0f * mult,   5.0f * mult,   // P0  (Move)
+                    50.0f * mult,  100.0f * mult, // C1  (BezierControl)
+                    150.0f * mult, 100.0f * mult, // C2  (BezierControl)
+                    200.0f * mult, 5.0f * mult,    // P3  (Line)
 
-                    5.0f,   95.0f,   // P0  (Move)
-                    50.0f,  190.0f, // C1  (BezierControl)
-                    150.0f, 190.0f, // C2  (BezierControl)
-                    200.0f, 95.0f,    // P3  (Line)
+                    5.0f * mult,   95.0f * mult,   // P0  (Move)
+                    50.0f * mult,  190.0f * mult, // C1  (BezierControl)
+                    150.0f * mult, 190.0f * mult, // C2  (BezierControl)
+                    200.0f * mult, 95.0f * mult,    // P3  (Line)
                 };
 
                 byte[] types = new[]
@@ -72,7 +74,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
-                pl.SetDashPatten(new[] { 10f, 10f, 5f, 30f });
+                pl.SetDashPatten(new[] { 10f * mult, 10f * mult, 5f * mult, 30f * mult });
 
                 plType = pl.CurrentStage.StageType;
 
