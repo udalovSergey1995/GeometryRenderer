@@ -74,7 +74,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
-                pl.SetDashPatten(new[] { 3 * mult, 3 * mult });
+                pl.SetDashPatten(new[] { 10 * mult, 10 * mult });
 
                 plType = pl.CurrentStage.StageType;
 
@@ -82,7 +82,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
 
-                pl.SetThickLine(5f);
+                pl.SetThickLine(15f, ThickLineJoin.Bevel, ThickLineCap.Flat);
 
                 plType = pl.CurrentStage.StageType;
 
