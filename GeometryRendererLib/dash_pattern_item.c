@@ -599,7 +599,7 @@ DashPatternBuildDashedLine(
             subPathStart = i;
             inSubPath = TRUE;
         }
-        else if (LineItem->PointTypes[i] == LinePointType_Close)
+        else if (IS_CLOSE_POINT(LineItem->PointTypes[i]))
         {
             if (inSubPath)
             {

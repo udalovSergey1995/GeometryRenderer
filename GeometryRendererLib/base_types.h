@@ -39,8 +39,40 @@ typedef const VOID    *PCVOID;
 typedef BYTE LINE_POINT_TYPE, * PLINE_POINT_TYPE;
 typedef const LINE_POINT_TYPE* PCLINE_POINT_TYPE;
 
-#define LinePointType_Move ((LINE_POINT_TYPE)0)    /* Начало новой подлинии      */
-#define LinePointType_Line ((LINE_POINT_TYPE)1)    /* Отрезок линии до след.точки */
-#define LinePointType_BezierControl ((LINE_POINT_TYPE)2)    /* Опорная точка Безье        */
-#define LinePointType_Close ((LINE_POINT_TYPE)3)/* Замкнуть текущую подлинию  */
+#define GDI_PLUS
 
+
+
+
+#ifndef GDI_PLUS
+
+#define LinePointType_Move ((LINE_POINT_TYPE)0x0)    /* Начало новой подлинии      */
+#define LinePointType_Line ((LINE_POINT_TYPE)0x1)    /* Отрезок линии до след.точки */
+#define LinePointType_BezierControl ((LINE_POINT_TYPE)0x2)    /* Опорная точка Безье */
+#define LinePointType_Close ((LINE_POINT_TYPE)0x4)/* Замкнуть текущую подлинию  */
+
+// Маска типа (нижние 2 бита)
+#define LinePointType_TypeMask      ((LINE_POINT_TYPE)0x02)
+
+// Удобные макросы
+#define GET_POINT_TYPE(t)           ((t) & LinePointType_TypeMask)
+#define IS_CLOSE_POINT(t)           (((t) & LinePointType_Close) != 0)
+#define MAKE_CLOSE_POINT(t)         ((LINE_POINT_TYPE)((t) | LinePointType_Close))
+
+#else
+
+// Основные типы (совпадают с GDI+)
+#define LinePointType_Move          ((LINE_POINT_TYPE)0x00)  // Start
+#define LinePointType_Line          ((LINE_POINT_TYPE)0x01)  // Line
+#define LinePointType_BezierControl ((LINE_POINT_TYPE)0x03)  // Bezier (в GDI+ именно 3!)
+// Флаги
+#define LinePointType_Close         ((LINE_POINT_TYPE)0x80)  // CloseSubpath
+                                  // Маска типа (нижние 3 бита)
+#define LinePointType_TypeMask      ((LINE_POINT_TYPE)0x07)
+
+// Удобные макросы
+#define GET_POINT_TYPE(t)           ((t) & LinePointType_TypeMask)
+#define IS_CLOSE_POINT(t)           (((t) & LinePointType_Close) != 0)
+#define MAKE_CLOSE_POINT(t)         ((LINE_POINT_TYPE)((t) | LinePointType_Close))
+
+#endif

@@ -14,10 +14,18 @@ namespace GeometryRenderer.NET.Bindings.Types
     /// </summary>
     public enum LinePointType : int
     {
-        Move = 0,
-        Line = 1,
-        BezierControl = 2,
-        Close = 3
+        Move = 0x0,
+        Line = 0x1,
+        BezierControl = 0x3
+    }
+
+    public static class LinePointTypeEx
+    {
+        public static LinePointType MakeClose(this LinePointType type)
+        {
+            byte closeFlag = 0x80;
+            return (LinePointType)((byte)type | closeFlag);
+        }
     }
 
     public enum EPathStageType

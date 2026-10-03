@@ -35,7 +35,12 @@ namespace GeometryRenderer.NET.TestApp
                     5.0f,   5.0f,   // P0  (Move)
                     50.0f,  100.0f, // C1  (BezierControl)
                     150.0f, 100.0f, // C2  (BezierControl)
-                    200.0f, 5.0f    // P3  (Line)
+                    200.0f, 5.0f,    // P3  (Line)
+
+                    5.0f,   95.0f,   // P0  (Move)
+                    50.0f,  190.0f, // C1  (BezierControl)
+                    150.0f, 190.0f, // C2  (BezierControl)
+                    200.0f, 95.0f,    // P3  (Line)
                 };
 
                 byte[] types = new[]
@@ -43,7 +48,12 @@ namespace GeometryRenderer.NET.TestApp
                     (byte)LinePointType.Move,
                     (byte)LinePointType.BezierControl,
                     (byte)LinePointType.BezierControl,
-                    (byte)LinePointType.Line
+                    (byte)LinePointType.Line.MakeClose(),
+
+                    (byte)LinePointType.Move,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.BezierControl,
+                    (byte)LinePointType.Line.MakeClose(),
                 };
 
                 pl.AddPath(points, types, false);
@@ -62,7 +72,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
-                pl.SetDashPatten(new[] { 10f, 10f });
+                pl.SetDashPatten(new[] { 10f, 10f, 5f, 30f });
 
                 plType = pl.CurrentStage.StageType;
 

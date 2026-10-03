@@ -250,6 +250,8 @@ FlattenItemInitEx(
 
     for (i = 0; i < LineItem->PointCount; i++)
     {
+        BOOL fIsClose = IS_CLOSE_POINT(LineItem->PointTypes[i]);
+
         switch (LineItem->PointTypes[i])
         {
             case LinePointType_Move:
@@ -267,10 +269,15 @@ FlattenItemInitEx(
 
             case LinePointType_Line:
             {
+                LINE_ITEM_TYPE outType = LinePointType_Line;
+
+                if (fIsClose)
+                    outType = MAKE_CLOSE_POINT(outType);
+
                 if (!FlattenBufferAppendPoint(&buffer,
                     LineItem->Points[i * 2],
                     LineItem->Points[i * 2 + 1],
-                    LinePointType_Line))
+                    outType))
                 {
                     FlattenBufferUninit(&buffer);
                     return NULL;
@@ -316,8 +323,20 @@ FlattenItemInitEx(
                 p3x = LineItem->Points[(i + 2) * 2];
                 p3y = LineItem->Points[(i + 2) * 2 + 1];
 
+                UINT countBefore = buffer.Count;
+
                 FlattenBezierRecursive(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y,
                     Flatness, 0, &buffer);
+
+                // Если исходная конечная точка имела Close — ставим его на последнюю сгенерированную
+                if (IS_CLOSE_POINT(LineItem->PointTypes[i + 2]))
+                {
+                    if (buffer.Count > countBefore)
+                    {
+                        buffer.Types[buffer.Count - 1] =
+                            MAKE_CLOSE_POINT(buffer.Types[buffer.Count - 1]);
+                    }
+                }
 
                 i += 2;
                 break;
