@@ -66,6 +66,9 @@ namespace GeometryRenderer.NET.TestApp
 
                 var flags = (pl.CurrentStage as PipeLogicalLineStage)?.PathFlags;
 
+
+
+
                 pl.FlettenizePath();
 
                 plType = pl.CurrentStage.StageType;
@@ -73,6 +76,9 @@ namespace GeometryRenderer.NET.TestApp
                 pts = (pl.CurrentStage as PipeApproximatedLineStage)?.Path;
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
+
+
+
 
                 pl.SetDashPatten(new[] { 10 * mult, 10 * mult });
 
@@ -82,6 +88,9 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
 
+
+
+
                 pl.SetThickLine(15f, ThickLineJoin.Bevel, ThickLineCap.Flat);
 
                 plType = pl.CurrentStage.StageType;
@@ -89,6 +98,9 @@ namespace GeometryRenderer.NET.TestApp
                 pts = (pl.CurrentStage as PipeThickLineStage)?.Path;
 
                 flags = (pl.CurrentStage as PipeThickLineStage)?.PathFlags;
+
+
+
 
                 var wPts = GetPts(pts);
 
