@@ -476,7 +476,9 @@ DashPatternSplitSegment(
 }
 
 /* -------------------------------------------------------------
-   Обработка одной подлинии (subpath) — разбиение всех её сегментов
+   Обработка одной подлинии (subpath).
+   Если subpath закрыт — дополнительно обрабатывает
+   закрывающий отрезок (последняя точка → первая точка).
    ------------------------------------------------------------- */
 static
 BOOL
@@ -485,6 +487,7 @@ DashPatternProcessSubPath(
     _In_ PSLineItem         LineItem,
     _In_ UINT               StartIdx,
     _In_ UINT               EndIdx,
+    _In_ BOOL               isClosed,          // <-- новый параметр
     _In_reads_(DashCount) PCFLOAT DashLengths,
     _In_ UINT               DashCount,
     _Inout_ PUINT           pSegmentIndex,
@@ -493,25 +496,19 @@ DashPatternProcessSubPath(
 )
 {
     UINT i;
-    FLOAT x0;
-    FLOAT y0;
-    FLOAT x1;
-    FLOAT y1;
+    FLOAT x0, y0, x1, y1;
 
     if (StartIdx >= EndIdx)
-    {
         return TRUE;
-    }
 
     x0 = LineItem->Points[StartIdx * 2];
     y0 = LineItem->Points[StartIdx * 2 + 1];
 
+    // Обычные сегменты
     for (i = StartIdx + 1; i <= EndIdx; i++)
     {
-        if (LineItem->PointTypes[i] == LinePointType_Move)
-        {
+        if (GET_POINT_TYPE(LineItem->PointTypes[i]) == LinePointType_Move)
             break;
-        }
 
         x1 = LineItem->Points[i * 2];
         y1 = LineItem->Points[i * 2 + 1];
@@ -527,6 +524,24 @@ DashPatternProcessSubPath(
 
         x0 = x1;
         y0 = y1;
+    }
+
+    // ===== Закрывающий сегмент =====
+    if (isClosed)
+    {
+        FLOAT firstX = LineItem->Points[StartIdx * 2];
+        FLOAT firstY = LineItem->Points[StartIdx * 2 + 1];
+
+        // x0/y0 сейчас содержат координаты последней точки subpath
+        if (!DashPatternSplitSegment(
+            x0, y0,
+            firstX, firstY,
+            DashLengths, DashCount,
+            pSegmentIndex, pSegmentRemain,
+            Buffer))
+        {
+            return FALSE;
+        }
     }
 
     return TRUE;
@@ -587,6 +602,7 @@ DashPatternBuildDashedLine(
             {
                 if (!DashPatternProcessSubPath(
                     LineItem, subPathStart, i - 1,
+                    FALSE,
                     DashLengths, DashCount,
                     &segIdx, &segRemain,
                     &buffer))
@@ -605,6 +621,7 @@ DashPatternBuildDashedLine(
             {
                 if (!DashPatternProcessSubPath(
                     LineItem, subPathStart, i,
+                    TRUE,
                     DashLengths, DashCount,
                     &segIdx, &segRemain,
                     &buffer))
@@ -622,6 +639,7 @@ DashPatternBuildDashedLine(
     {
         if (!DashPatternProcessSubPath(
             LineItem, subPathStart, LineItem->PointCount - 1,
+            FALSE,
             DashLengths, DashCount,
             &segIdx, &segRemain,
             &buffer))
