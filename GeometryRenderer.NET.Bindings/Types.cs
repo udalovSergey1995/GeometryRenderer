@@ -216,9 +216,29 @@ namespace GeometryRenderer.NET.Bindings.Types
             AddPathData(points, ptTypes, true, isClosed);
         }
 
-        public void AddPath(float[] points, byte[] ptTypes, bool isClosed = false)
+        public void AddLinePath(float[] points, byte[] ptTypes, bool isClosed = false)
         {
             AddPathData(points, ptTypes, false, isClosed);
+        }
+
+        /// <summary>
+        /// Автоматически решит какую линию добавлять на основе типов точек
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="ptTypes"></param>
+        /// <param name="isClosed"></param>
+        public void AddPath(float[] points, byte[] ptTypes, bool isClosed = false)
+        {
+            foreach (var flag in ptTypes)
+            {
+                if (flag == (byte)LinePointType.BezierControl)
+                {
+                    AddBezierePath(points, ptTypes, isClosed);
+                    return;
+                }
+            }
+
+            AddLinePath(points, ptTypes, isClosed);
         }
 
         public void FlettenizePath()

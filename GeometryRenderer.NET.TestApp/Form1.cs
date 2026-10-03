@@ -46,7 +46,7 @@ namespace GeometryRenderer.NET.TestApp
                     (byte)LinePointType.Line
                 };
 
-                pl.AddBezierePath(points, types, false);
+                pl.AddPath(points, types, false);
 
                 var plType = pl.CurrentStage.StageType;
 
