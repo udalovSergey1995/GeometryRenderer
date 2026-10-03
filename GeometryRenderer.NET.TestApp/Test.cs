@@ -303,13 +303,16 @@ namespace GeometryRenderer.NET.TestApp
 
                 flags = (pl.CurrentStage as PipeApproximatedLineStage)?.PathFlags;
 
-                pl.SetDashPatten(new[] { 1f, 1f });
+                pl.SetDashPatten(new[] { 1f, 1f, 5f, 5f });
 
                 plType = pl.CurrentStage.StageType;
 
                 pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
 
                 flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
+
+                var dashCount = (pl.CurrentStage as PipeDashedLineStage)?.DashCount;
+                var dashOffeset = (pl.CurrentStage as PipeDashedLineStage)?.DashOffset;
             }
         }
     }

@@ -17,9 +17,9 @@
 
         PathFlags,
 
-        DashItemPropsStart,
+        DashItemPropsStart = 9,
 
-        DashCount = DashItemPropsStart + 1,
+        DashCount,
 
         DashOffset,
     }

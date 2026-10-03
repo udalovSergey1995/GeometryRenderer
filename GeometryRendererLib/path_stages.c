@@ -308,6 +308,70 @@ PathStagesgetPathLen(
 
 }
 
+VOID 
+GR_CALL
+PathStagesGetPathData(
+    _In_ PSPathStageEntry pEntry,
+    _Maybenull_ PFLOAT * ppPoints,
+    _Maybenull_ PBYTE * ppFlags,
+    _Maybenull_ PINT pDataMemLen,
+    _Maybenull_ PINT pFlagsMemLen
+)
+{
+    ASSERT(pEntry);
+    ASSERT(pEntry->StageData);
+
+    PFLOAT pTmpOutData = NULL;
+    PBYTE pTmpOutFlags = NULL;
+    PSLineItem pLine = NULL;
+
+    switch (pEntry->StageType)
+    {
+        case PathStageTypeDashPattern:
+        {
+            PSDashPatternItem pDash = pEntry->StageData;
+
+            ASSERT(pDash->DashedLine);
+
+            pLine = pDash->DashedLine;
+
+            if (pDataMemLen)
+                (*pDataMemLen) = pLine->PointCount * 2 * sizeof(float);
+
+            if (pFlagsMemLen)
+                (*pFlagsMemLen) = pLine->PointCount;
+
+            pTmpOutData = pLine->Points;
+            pTmpOutFlags = pLine->PointTypes;
+
+            break;
+        }
+        default:
+        {
+            pLine = pEntry->StageData;
+
+            if (pDataMemLen)
+                (*pDataMemLen) = pLine->PointCount * 2 * sizeof(float);
+
+            if (pFlagsMemLen)
+                (*pFlagsMemLen) = pLine->PointCount;
+
+            pTmpOutData = pLine->Points;
+            pTmpOutFlags = pLine->PointTypes;
+        }
+    }
+
+    if (ppPoints && pTmpOutData)
+    {
+        (*ppPoints) = pTmpOutData;
+    }
+
+    if (ppFlags && pTmpOutFlags)
+    {
+        (*ppFlags) = pTmpOutFlags;
+    }
+}
+
 BOOL
 GR_CALL
 PathStagesEntryGetProperty(
@@ -385,16 +449,14 @@ PathStagesEntryGetProperty(
             }
             case ESP_PATH_DATA:
             {
-                iOutLen = pLine->PointCount * 2 * sizeof(float);
-                pTmpOutData = pLine->Points;
+                PathStagesGetPathData(pEntry, (PFLOAT*)&pTmpOutData, NULL, &iOutLen, NULL);
 
                 fResult = TRUE;
                 break;
             }
             case ESP_PATH_FLAGS:
             {
-                iOutLen = pLine->PointCount;
-                pTmpOutData = pLine->PointTypes;
+                PathStagesGetPathData(pEntry, NULL, &pTmpOutData, NULL, &iOutLen);
 
                 fResult = TRUE;
                 break;
@@ -409,8 +471,6 @@ PathStagesEntryGetProperty(
         && pEntry->StageType == PathStageTypeDashPattern)
     {
         PSDashPatternItem pDashItem = (PSDashPatternItem)pEntry->StageData;
-
-        __debugbreak();
 
 		if (!pDashItem)
 			return FALSE;
