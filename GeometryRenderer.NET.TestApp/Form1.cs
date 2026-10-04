@@ -80,18 +80,18 @@ namespace GeometryRenderer.NET.TestApp
 
 
 
-                pl.SetDashPatten(new[] { 10 * mult, 10 * mult });
+                //pl.SetDashPatten(new[] { 10 * mult, 10 * mult });
 
-                plType = pl.CurrentStage.StageType;
+                //plType = pl.CurrentStage.StageType;
 
-                pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
+                //pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
 
-                flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
-
-
+                //flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
 
 
-                pl.SetThickLine(15f, ThickLineJoin.Bevel, ThickLineCap.Flat);
+
+
+                pl.SetThickLine(45f, ThickLineJoin.Miter, ThickLineCap.Round);
 
                 plType = pl.CurrentStage.StageType;
 
@@ -108,7 +108,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 if (plType == EPathStageType.PathStageTypeThickLine)
                 {
-                    gp.FillMode = FillMode.Winding;
+                    //gp.FillMode = FillMode.Winding;
                     e.Graphics.FillPath(Brushes.Red, gp);
                 }
                 else

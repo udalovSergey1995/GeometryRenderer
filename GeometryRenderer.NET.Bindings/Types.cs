@@ -127,7 +127,7 @@ namespace GeometryRenderer.NET.Bindings.Types
     public class PipeThickLineStage : PipeLogicalLineStage
     {
         public float Thickness
-            => BaseNativeObject.GetObjectPropertyInt(
+            => BaseNativeObject.GetObjectPropertyFloat(
                     base._nativeObject,
                     (int)PathStagesEntryProps.Thicknes);
 
@@ -142,7 +142,7 @@ namespace GeometryRenderer.NET.Bindings.Types
                     (int)PathStagesEntryProps.CapStyle);
 
         public float MiterLimit
-            => BaseNativeObject.GetObjectPropertyInt(
+            => BaseNativeObject.GetObjectPropertyFloat(
                     base._nativeObject,
                     (int)PathStagesEntryProps.MiterLimit);
 
