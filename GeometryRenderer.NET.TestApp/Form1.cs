@@ -50,12 +50,12 @@ namespace GeometryRenderer.NET.TestApp
                     (byte)LinePointType.Move,
                     (byte)LinePointType.BezierControl,
                     (byte)LinePointType.BezierControl,
-                    (byte)LinePointType.Line.MakeClose(),
+                    (byte)LinePointType.Line,
 
                     (byte)LinePointType.Move,
                     (byte)LinePointType.BezierControl,
                     (byte)LinePointType.BezierControl,
-                    (byte)LinePointType.Line.MakeClose(),
+                    (byte)LinePointType.Line,
                 };
 
                 pl.AddPath(points, types, false);
@@ -80,18 +80,18 @@ namespace GeometryRenderer.NET.TestApp
 
 
 
-                //pl.SetDashPatten(new[] { 10 * mult, 10 * mult });
+                pl.SetDashPatten(new[] { 20 * mult, 20 * mult });
 
-                //plType = pl.CurrentStage.StageType;
+                plType = pl.CurrentStage.StageType;
 
-                //pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
+                pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
 
-                //flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
-
-
+                flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
 
 
-                pl.SetThickLine(45f, ThickLineJoin.Miter, ThickLineCap.Round);
+
+
+                pl.SetThickLine(45f, ThickLineJoin.Bevel, ThickLineCap.Round);
 
                 plType = pl.CurrentStage.StageType;
 
