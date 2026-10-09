@@ -11,6 +11,12 @@ namespace GeometryRenderer.NET.TestApp
             InitializeComponent();
 
             this.Paint += Form1_Paint;
+            this.SizeChanged += Form1_SizeChanged;
+        }
+
+        private void Form1_SizeChanged(object? sender, EventArgs e)
+        {
+            Invalidate();
         }
 
         private static PointF[] GetPts(GRNativePoint[] nPts)
@@ -31,17 +37,18 @@ namespace GeometryRenderer.NET.TestApp
             using (var pl = new PipeLineObject())
             {
                 float mult = 3f;
+                float thick = 90f;
 
                 float[] points = new float[]
                 {
-                    5.0f * mult,   5.0f * mult,   // P0  (Move)
-                    50.0f * mult,  100.0f * mult, // C1  (BezierControl)
-                    150.0f * mult, 100.0f * mult, // C2  (BezierControl)
+                    thick,   thick,   // P0  (Move)
+                    50f * mult ,  100.0f , // C1  (BezierControl)
+                    this.Width - 150.0f , this.Height - 100.0f * mult, // C2  (BezierControl)
                     200.0f * mult, 5.0f * mult,    // P3  (Line)
 
-                    5.0f * mult,   95.0f * mult,   // P0  (Move)
+                    thick,   95.0f * mult,   // P0  (Move)
                     50.0f * mult,  190.0f * mult, // C1  (BezierControl)
-                    150.0f * mult, 190.0f * mult, // C2  (BezierControl)
+                    this.Width - 150.0f , this.Height - 190.0f * mult, // C2  (BezierControl)
                     200.0f * mult, 95.0f * mult,    // P3  (Line)
                 };
 
@@ -68,7 +75,6 @@ namespace GeometryRenderer.NET.TestApp
 
 
 
-
                 pl.FlettenizePath();
 
                 plType = pl.CurrentStage.StageType;
@@ -79,25 +85,28 @@ namespace GeometryRenderer.NET.TestApp
 
 
 
+                if (1 == 1)
+                {
+                    pl.SetDashPatten(new[] { thick * mult, thick * mult });
 
-                pl.SetDashPatten(new[] { 20 * mult, 20 * mult });
+                    plType = pl.CurrentStage.StageType;
 
-                plType = pl.CurrentStage.StageType;
+                    pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
 
-                pts = (pl.CurrentStage as PipeDashedLineStage)?.Path;
-
-                flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
-
+                    flags = (pl.CurrentStage as PipeDashedLineStage)?.PathFlags;
+                }
 
 
+                if (1 == 1)
+                {
+                    pl.SetThickLine(thick, ThickLineJoin.Miter, ThickLineCap.Round);
 
-                pl.SetThickLine(45f, ThickLineJoin.Bevel, ThickLineCap.Round);
+                    plType = pl.CurrentStage.StageType;
 
-                plType = pl.CurrentStage.StageType;
+                    pts = (pl.CurrentStage as PipeThickLineStage)?.Path;
 
-                pts = (pl.CurrentStage as PipeThickLineStage)?.Path;
-
-                flags = (pl.CurrentStage as PipeThickLineStage)?.PathFlags;
+                    flags = (pl.CurrentStage as PipeThickLineStage)?.PathFlags;
+                }
 
 
 
@@ -108,7 +117,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 if (plType == EPathStageType.PathStageTypeThickLine)
                 {
-                    //gp.FillMode = FillMode.Winding;
+                    gp.FillMode = FillMode.Winding;
                     e.Graphics.FillPath(Brushes.Red, gp);
                 }
                 else
