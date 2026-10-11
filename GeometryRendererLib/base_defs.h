@@ -1,4 +1,8 @@
 ﻿#pragma once
+
+#if defined(_MSC_VER)
+#include <sal.h>
+#endif
 /*=============================================================================
  *  SAL2 аннотации (fallback если нет <sal.h>)
  *===========================================================================*/
@@ -60,7 +64,9 @@
 #endif
 
 #ifndef ASSERT
-#define ASSERT(__p) if(!(__p)) __debugbreak();
+#define ASSERT(__p)                                                                                \
+    if (!(__p))                                                                                    \
+        __debugbreak();
 #endif
 
 /*=============================================================================
@@ -68,19 +74,24 @@
  *===========================================================================*/
 
 #ifndef GR_CALL
-    #if defined(_WIN32) && !defined(_WIN64)
-        #define GR_CALL __stdcall
-    #else
-        #define GR_CALL
-    #endif
+#if defined(_WIN32) && !defined(_WIN64)
+#define GR_CALL __stdcall
+#else
+#define GR_CALL
+#endif
 #endif
 
 #ifndef GR_EXPORT
-    #define GR_EXPORT __declspec(dllexport)
+#define GR_EXPORT __declspec(dllexport)
 #endif
 
 /*=============================================================================
  *  Макрос CONTAINING_RECORD
  *===========================================================================*/
 
-#define CONTAINING_RECORD(Address, Type, Field) ((Type*)((UINT8*)(Address) - offsetof(Type, Field)))
+#define CONTAINING_RECORD(Address, Type, Field)                                                    \
+    ((Type *)((UINT8 *)(Address) - offsetof(Type, Field)))
+
+#ifndef _Inout_updates_bytes_
+#define _Inout_updates_bytes_(size)
+#endif

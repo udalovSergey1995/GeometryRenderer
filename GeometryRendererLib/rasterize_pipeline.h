@@ -2,77 +2,94 @@
 
 typedef struct _PathPipeLine
 {
-	SBaseObject Base;
-	SPathStages m_sPathStages;
-} SPathPipeLine, * PSPathPipeLine;
+    SBaseObject Base;
+    SPathStages m_sPathStages;
+} SPathPipeLine, *PSPathPipeLine;
 
-GR_EXPORT BOOL GR_CALL PathPipeLineRasterizeSlabs(PSPathPipeLine Pipeline);
-GR_EXPORT BOOL GR_CALL PathPipeLineDrawSlabs(PSPathPipeLine Pipeline,
-    PBYTE Pixels, INT BufferLength, INT Width, INT Height, INT Stride, UINT Color);
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineRasterizeSlabs(
+    _Inout_ PSPathPipeLine Pipeline
+);
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineDrawSlabs(
+    _Inout_ PSPathPipeLine Pipeline,
+    _Inout_updates_bytes_(BufferLength) PBYTE Pixels,
+    _In_ INT BufferLength,
+    _In_ INT Width,
+    _In_ INT Height,
+    _In_ INT Stride,
+    _In_ UINT Color
+);
 
 /*
-* Проинициализировать объект паплайна
-*/
+ * Проинициализировать объект паплайна
+ */
 GR_EXPORT
 PSPathPipeLine
 GR_CALL
-PathPipeLineCreate();
+PathPipeLineCreate(
+    VOID
+);
 
 GR_EXPORT
 VOID
 GR_CALL
 PathPipeLineDestroy(
-	_In_ PSPathPipeLine pPipeline
+    _Inout_ PSPathPipeLine pPipeline
 );
 
 GR_EXPORT
 BOOL
 GR_CALL
 PathPipeLineAddLogicalLine(
-	_In_ PSPathPipeLine pPipeline,
-	_In_ PFLOAT pPoints,
-	_In_ PBYTE pTypes,
-	_In_ INT iCount,
-	_In_ BOOL fIsBeziere,
-	_In_ BOOL fIsClose
+    _Inout_ PSPathPipeLine pPipeline,
+    _In_ PFLOAT pPoints,
+    _In_ PBYTE pTypes,
+    _In_ INT iCount,
+    _In_ BOOL fIsBeziere,
+    _In_ BOOL fIsClose
 );
 
 GR_EXPORT
 BOOL
 GR_CALL
 PathPipeLineFlattenizeLogicalLine(
-	_In_ PSPathPipeLine pPipeline
+    _Inout_ PSPathPipeLine pPipeline
 );
 
 /*
-* Применить dash pattern к последнему этапу (Logical или Approximated).
-* pDashLengths - массив длин [dash, gap, dash, gap, ...]
-* iDashCount   - количество элементов в массиве (должно быть >= 2)
-* fDashOffset  - смещение начала dash pattern
-*/
+ * Применить dash pattern к последнему этапу (Logical или Approximated).
+ * pDashLengths - массив длин [dash, gap, dash, gap, ...]
+ * iDashCount   - количество элементов в массиве (должно быть >= 2)
+ * fDashOffset  - смещение начала dash pattern
+ */
 GR_EXPORT
 BOOL
 GR_CALL
 PathPipeLineApplyDashPattern(
-	_In_ PSPathPipeLine pPipeline,
-	_In_reads_(iDashCount) PCFLOAT pDashLengths,
-	_In_ INT iDashCount,
-	_In_ FLOAT fDashOffset
+    _Inout_ PSPathPipeLine pPipeline,
+    _In_reads_(iDashCount) PCFLOAT pDashLengths,
+    _In_ INT iDashCount,
+    _In_ FLOAT fDashOffset
 );
 
 GR_EXPORT
 PSPathStageEntry
 GR_CALL
 PathPipeEnumPathstages(
-	_In_ PSPathPipeLine pPipeline,
-	_In_ PSPathStageEntry pCurrentItem
+    _Inout_ PSPathPipeLine pPipeline,
+    _In_ PSPathStageEntry pCurrentItem
 );
 
 GR_EXPORT
 PSPathStageEntry
 GR_CALL
 PathPipeLineGetLastStage(
-	_In_ PSPathPipeLine pPipeline
+    _Inout_ PSPathPipeLine pPipeline
 );
 
 /*
@@ -88,11 +105,11 @@ GR_EXPORT
 BOOL
 GR_CALL
 PathPipeLineApplyThickLine(
-	_In_ PSPathPipeLine     pPipeline,
-	_In_ FLOAT              Thickness,
-	_In_ THICK_LINE_JOIN    JoinStyle,
-	_In_ THICK_LINE_CAP     CapStyle,
-	_In_ FLOAT              MiterLimit
+    _Inout_ PSPathPipeLine pPipeline,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit
 );
 
 /* Допуск дуг в единицах координат пути. FALSE при ошибке или превышении лимитов. */
@@ -100,7 +117,7 @@ GR_EXPORT
 BOOL
 GR_CALL
 PathPipeLineApplyThickLineEx(
-    _In_ PSPathPipeLine pPipeline,
+    _Inout_ PSPathPipeLine pPipeline,
     _In_ FLOAT Thickness,
     _In_ THICK_LINE_JOIN JoinStyle,
     _In_ THICK_LINE_CAP CapStyle,

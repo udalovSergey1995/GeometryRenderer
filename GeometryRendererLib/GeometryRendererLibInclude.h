@@ -21,4 +21,3 @@
 #include "raster_slab_item.h"
 
 #include "rasterize_pipeline.h"
-

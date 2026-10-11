@@ -15,19 +15,19 @@ FlattenItemGetProperty(
 /* -------------------------------------------------------------
    Внутренние константы
    ------------------------------------------------------------- */
-#define FLATTEN_MAX_DEPTH           16
-#define FLATTEN_INITIAL_CAPACITY    16
+#define FLATTEN_MAX_DEPTH 16
+#define FLATTEN_INITIAL_CAPACITY 16
 
 /* -------------------------------------------------------------
    Внутренний буфер для накопления точек
    ------------------------------------------------------------- */
 typedef struct _FLATTEN_BUFFER
 {
-    PFLOAT              Points;
-    PLINE_POINT_TYPE    Types;
-    UINT                Capacity;
-    UINT                Count;
-} FLATTEN_BUFFER, * PFLATTEN_BUFFER;
+    PFLOAT Points;
+    PLINE_POINT_TYPE Types;
+    UINT Capacity;
+    UINT Count;
+} FLATTEN_BUFFER, *PFLATTEN_BUFFER;
 
 /* -------------------------------------------------------------
    Внутренние функции буфера
@@ -74,7 +74,7 @@ BOOL
 GR_CALL
 FlattenBufferGrow(
     _Inout_ PFLATTEN_BUFFER Buffer,
-    _In_ UINT               MinCapacity
+    _In_ UINT MinCapacity
 )
 {
     UINT newCapacity;
@@ -115,9 +115,9 @@ BOOL
 GR_CALL
 FlattenBufferAppendPoint(
     _Inout_ PFLATTEN_BUFFER Buffer,
-    _In_ FLOAT              X,
-    _In_ FLOAT              Y,
-    _In_ LINE_POINT_TYPE    Type
+    _In_ FLOAT X,
+    _In_ FLOAT Y,
+    _In_ LINE_POINT_TYPE Type
 )
 {
     if (!FlattenBufferGrow(Buffer, Buffer->Count + 1))
@@ -140,16 +140,16 @@ static
 VOID
 GR_CALL
 FlattenBezierRecursive(
-    _In_ FLOAT              P0x,
-    _In_ FLOAT              P0y,
-    _In_ FLOAT              P1x,
-    _In_ FLOAT              P1y,
-    _In_ FLOAT              P2x,
-    _In_ FLOAT              P2y,
-    _In_ FLOAT              P3x,
-    _In_ FLOAT              P3y,
-    _In_ FLOAT              Flatness,
-    _In_ UINT               Depth,
+    _In_ FLOAT P0x,
+    _In_ FLOAT P0y,
+    _In_ FLOAT P1x,
+    _In_ FLOAT P1y,
+    _In_ FLOAT P2x,
+    _In_ FLOAT P2y,
+    _In_ FLOAT P3x,
+    _In_ FLOAT P3y,
+    _In_ FLOAT Flatness,
+    _In_ UINT Depth,
     _Inout_ PFLATTEN_BUFFER Buffer
 )
 {
@@ -192,9 +192,7 @@ FlattenBezierRecursive(
     distSqMax = cross1 > cross2 ? cross1 : cross2;
     distSqMax = distSqMax * distSqMax;
 
-    if (Depth >= FLATTEN_MAX_DEPTH ||
-        lenSq == 0.0f ||
-        distSqMax <= Flatness * Flatness * lenSq)
+    if (Depth >= FLATTEN_MAX_DEPTH || lenSq == 0.0f || distSqMax <= Flatness * Flatness * lenSq)
     {
         FlattenBufferAppendPoint(Buffer, P3x, P3y, LinePointType_Line);
         return;
@@ -215,23 +213,15 @@ FlattenBezierRecursive(
     m5x = (m3x + m4x) * 0.5f;
     m5y = (m3y + m4y) * 0.5f;
 
-    FlattenBezierRecursive(P0x, P0y, m0x, m0y, m3x, m3y, m5x, m5y,
-        Flatness, Depth + 1, Buffer);
-    FlattenBezierRecursive(m5x, m5y, m4x, m4y, m2x, m2y, P3x, P3y,
-        Flatness, Depth + 1, Buffer);
+    FlattenBezierRecursive(P0x, P0y, m0x, m0y, m3x, m3y, m5x, m5y, Flatness, Depth + 1, Buffer);
+    FlattenBezierRecursive(m5x, m5y, m4x, m4y, m2x, m2y, P3x, P3y, Flatness, Depth + 1, Buffer);
 }
 
 /* -------------------------------------------------------------
    FlattenItemInitEx
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSLineItem
-GR_CALL
-FlattenItemInitEx(
-    _In_ PSLineItem LineItem,
-    _In_ FLOAT      Flatness
-)
+_Check_return_ _Ret_maybenull_ PSLineItem GR_CALL
+FlattenItemInitEx(_In_ PSLineItem LineItem, _In_ FLOAT Flatness)
 {
     FLATTEN_BUFFER buffer;
     PSLineItem result;
@@ -251,7 +241,9 @@ FlattenItemInitEx(
         }
 
         memcpy(result->Points, LineItem->Points, LineItem->PointCount * 2 * sizeof(FLOAT));
-        memcpy(result->PointTypes, LineItem->PointTypes, LineItem->PointCount * sizeof(LINE_POINT_TYPE));
+        memcpy(result->PointTypes,
+               LineItem->PointTypes,
+               LineItem->PointCount * sizeof(LINE_POINT_TYPE));
         return result;
     }
 
@@ -266,12 +258,59 @@ FlattenItemInitEx(
 
         switch (LineItem->PointTypes[i])
         {
-            case LinePointType_Move:
+        case LinePointType_Move:
+        {
+            if (!FlattenBufferAppendPoint(&buffer,
+                                          LineItem->Points[i * 2],
+                                          LineItem->Points[i * 2 + 1],
+                                          LinePointType_Move))
+            {
+                FlattenBufferUninit(&buffer);
+                return NULL;
+            }
+            break;
+        }
+
+        case LinePointType_Line:
+        {
+            LINE_ITEM_TYPE outType = LinePointType_Line;
+
+            if (fIsClose)
+            {
+                outType = MAKE_CLOSE_POINT(outType);
+            }
+
+            if (!FlattenBufferAppendPoint(
+                    &buffer, LineItem->Points[i * 2], LineItem->Points[i * 2 + 1], outType))
+            {
+                FlattenBufferUninit(&buffer);
+                return NULL;
+            }
+            break;
+        }
+
+        case LinePointType_BezierControl:
+        {
+            FLOAT p0x;
+            FLOAT p0y;
+            FLOAT p1x;
+            FLOAT p1y;
+            FLOAT p2x;
+            FLOAT p2y;
+            FLOAT p3x;
+            FLOAT p3y;
+
+            if (i == 0 || i + 2 >= LineItem->PointCount)
+            {
+                break;
+            }
+
+            if (LineItem->PointTypes[i + 1] != LinePointType_BezierControl)
             {
                 if (!FlattenBufferAppendPoint(&buffer,
-                    LineItem->Points[i * 2],
-                    LineItem->Points[i * 2 + 1],
-                    LinePointType_Move))
+                                              LineItem->Points[i * 2],
+                                              LineItem->Points[i * 2 + 1],
+                                              LinePointType_Line))
                 {
                     FlattenBufferUninit(&buffer);
                     return NULL;
@@ -279,96 +318,48 @@ FlattenItemInitEx(
                 break;
             }
 
-            case LinePointType_Line:
+            p0x = LineItem->Points[(i - 1) * 2];
+            p0y = LineItem->Points[(i - 1) * 2 + 1];
+            p1x = LineItem->Points[i * 2];
+            p1y = LineItem->Points[i * 2 + 1];
+            p2x = LineItem->Points[(i + 1) * 2];
+            p2y = LineItem->Points[(i + 1) * 2 + 1];
+            p3x = LineItem->Points[(i + 2) * 2];
+            p3y = LineItem->Points[(i + 2) * 2 + 1];
+
+            UINT countBefore = buffer.Count;
+
+            FlattenBezierRecursive(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, Flatness, 0, &buffer);
+
+            // Если исходная конечная точка имела Close — ставим его на последнюю сгенерированную
+            if (IS_CLOSE_POINT(LineItem->PointTypes[i + 2]))
             {
-                LINE_ITEM_TYPE outType = LinePointType_Line;
-
-                if (fIsClose)
-                    outType = MAKE_CLOSE_POINT(outType);
-
-                if (!FlattenBufferAppendPoint(&buffer,
-                    LineItem->Points[i * 2],
-                    LineItem->Points[i * 2 + 1],
-                    outType))
+                if (buffer.Count > countBefore)
                 {
-                    FlattenBufferUninit(&buffer);
-                    return NULL;
+                    buffer.Types[buffer.Count - 1] =
+                        MAKE_CLOSE_POINT(buffer.Types[buffer.Count - 1]);
                 }
-                break;
             }
 
-            case LinePointType_BezierControl:
+            i += 2;
+            break;
+        }
+
+        case LinePointType_Close:
+        {
+            if (!FlattenBufferAppendPoint(&buffer,
+                                          LineItem->Points[i * 2],
+                                          LineItem->Points[i * 2 + 1],
+                                          LinePointType_Close))
             {
-                FLOAT p0x;
-                FLOAT p0y;
-                FLOAT p1x;
-                FLOAT p1y;
-                FLOAT p2x;
-                FLOAT p2y;
-                FLOAT p3x;
-                FLOAT p3y;
-
-                if (i == 0 || i + 2 >= LineItem->PointCount)
-                {
-                    break;
-                }
-
-                if (LineItem->PointTypes[i + 1] != LinePointType_BezierControl)
-                {
-                    if (!FlattenBufferAppendPoint(&buffer,
-                        LineItem->Points[i * 2],
-                        LineItem->Points[i * 2 + 1],
-                        LinePointType_Line))
-                    {
-                        FlattenBufferUninit(&buffer);
-                        return NULL;
-                    }
-                    break;
-                }
-
-                p0x = LineItem->Points[(i - 1) * 2];
-                p0y = LineItem->Points[(i - 1) * 2 + 1];
-                p1x = LineItem->Points[i * 2];
-                p1y = LineItem->Points[i * 2 + 1];
-                p2x = LineItem->Points[(i + 1) * 2];
-                p2y = LineItem->Points[(i + 1) * 2 + 1];
-                p3x = LineItem->Points[(i + 2) * 2];
-                p3y = LineItem->Points[(i + 2) * 2 + 1];
-
-                UINT countBefore = buffer.Count;
-
-                FlattenBezierRecursive(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y,
-                    Flatness, 0, &buffer);
-
-                // Если исходная конечная точка имела Close — ставим его на последнюю сгенерированную
-                if (IS_CLOSE_POINT(LineItem->PointTypes[i + 2]))
-                {
-                    if (buffer.Count > countBefore)
-                    {
-                        buffer.Types[buffer.Count - 1] =
-                            MAKE_CLOSE_POINT(buffer.Types[buffer.Count - 1]);
-                    }
-                }
-
-                i += 2;
-                break;
+                FlattenBufferUninit(&buffer);
+                return NULL;
             }
+            break;
+        }
 
-            case LinePointType_Close:
-            {
-                if (!FlattenBufferAppendPoint(&buffer,
-                    LineItem->Points[i * 2],
-                    LineItem->Points[i * 2 + 1],
-                    LinePointType_Close))
-                {
-                    FlattenBufferUninit(&buffer);
-                    return NULL;
-                }
-                break;
-            }
-
-            default:
-                break;
+        default:
+            break;
         }
     }
 
@@ -390,13 +381,8 @@ FlattenItemInitEx(
 /* -------------------------------------------------------------
    FlattenItemInit
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSLineItem
-GR_CALL
-FlattenItemInit(
-    _In_ PSLineItem LineItem
-)
+_Check_return_ _Ret_maybenull_ PSLineItem GR_CALL
+FlattenItemInit(_In_ PSLineItem LineItem)
 {
     return FlattenItemInitEx(LineItem, FLATTEN_DEFAULT_TOLERANCE);
 }

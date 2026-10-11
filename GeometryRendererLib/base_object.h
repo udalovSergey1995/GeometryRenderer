@@ -2,18 +2,18 @@
 
 typedef enum _EObjectType
 {
-	EOT_BadObject,
-	
-	EOT_PipeLine,
-	EOT_PathStages,
-	EOT_PipeStageEntry,
+    EOT_BadObject,
 
-	EOT_TypesCount,
+    EOT_PipeLine,
+    EOT_PathStages,
+    EOT_PipeStageEntry,
+
+    EOT_TypesCount,
 } EObjectType;
 
 typedef struct _BaseObject
 {
-	EObjectType type;
+    EObjectType type;
 } SBaseObject, *PSBaseObject;
 
 /* Общая передача значения свойства без временного выделения памяти.
@@ -27,13 +27,8 @@ CopyObjectProperty(
     _Out_ PINT pOutLen
 );
 
-_Check_return_
-GR_EXPORT
-INT
-GR_CALL
-GetObjectProperty(
-	_In_ PVOID pObject,
-	_In_ INT eProp,
-	_Maybenull_ PVOID pOutData,
-	_Out_ PINT pOutLen
-);
+_Check_return_ GR_EXPORT INT GR_CALL
+GetObjectProperty(_In_ PVOID pObject,
+                  _In_ INT eProp,
+                  _Maybenull_ PVOID pOutData,
+                  _Out_ PINT pOutLen);

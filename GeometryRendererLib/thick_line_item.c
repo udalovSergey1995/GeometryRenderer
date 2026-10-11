@@ -11,59 +11,67 @@ ThickLineItemGetProperty(
 {
     PSThickLineItem pThick;
     if (!pOutLen)
+    {
         return FALSE;
+    }
     *pOutLen = 0;
     if (!pEntry || !pEntry->StageData)
+    {
         return FALSE;
+    }
 
     pThick = (PSThickLineItem)pEntry->StageData;
     if (IS_LOGICAL_ITEM_PROPS(eProp))
+    {
         return LineItemGetPathProperty(pThick->ThickGeometry, eProp, pOutData, pOutLen);
+    }
 
     switch (eProp)
     {
-        case ESP_TYPE:
-            return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
-        case ESP_THICKNESS:
-            return CopyObjectProperty(&pThick->Thickness, sizeof(pThick->Thickness), pOutData, pOutLen);
-        case ESP_JOIN_STYLE:
-            return CopyObjectProperty(&pThick->JoinStyle, sizeof(pThick->JoinStyle), pOutData, pOutLen);
-        case ESP_CAP_STYLE:
-            return CopyObjectProperty(&pThick->CapStyle, sizeof(pThick->CapStyle), pOutData, pOutLen);
-        case ESP_MITER_LIMIT:
-            return CopyObjectProperty(&pThick->MiterLimit, sizeof(pThick->MiterLimit), pOutData, pOutLen);
-        case ESP_ARC_TOLERANCE:
-            return CopyObjectProperty(&pThick->ArcTolerance, sizeof(pThick->ArcTolerance), pOutData, pOutLen);
-        default:
-            return FALSE;
+    case ESP_TYPE:
+        return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
+    case ESP_THICKNESS:
+        return CopyObjectProperty(&pThick->Thickness, sizeof(pThick->Thickness), pOutData, pOutLen);
+    case ESP_JOIN_STYLE:
+        return CopyObjectProperty(&pThick->JoinStyle, sizeof(pThick->JoinStyle), pOutData, pOutLen);
+    case ESP_CAP_STYLE:
+        return CopyObjectProperty(&pThick->CapStyle, sizeof(pThick->CapStyle), pOutData, pOutLen);
+    case ESP_MITER_LIMIT:
+        return CopyObjectProperty(
+            &pThick->MiterLimit, sizeof(pThick->MiterLimit), pOutData, pOutLen);
+    case ESP_ARC_TOLERANCE:
+        return CopyObjectProperty(
+            &pThick->ArcTolerance, sizeof(pThick->ArcTolerance), pOutData, pOutLen);
+    default:
+        return FALSE;
     }
 }
 
 /* -------------------------------------------------------------
    Внутренние константы
    ------------------------------------------------------------- */
-#define THICK_LINE_INITIAL_CAPACITY     64
-#define THICK_LINE_EPSILON              0.0001f
-#define THICK_LINE_PI                   3.14159265358979f
+#define THICK_LINE_INITIAL_CAPACITY 64
+#define THICK_LINE_EPSILON 0.0001f
+#define THICK_LINE_PI 3.14159265358979f
 
-   /* -------------------------------------------------------------
-      Внутренний буфер результирующего контура
-      ------------------------------------------------------------- */
+/* -------------------------------------------------------------
+   Внутренний буфер результирующего контура
+   ------------------------------------------------------------- */
 typedef struct _THICK_BUFFER
 {
-    PFLOAT              Points;
-    PLINE_POINT_TYPE    Types;
-    UINT                Capacity;
-    UINT                Count;
-    FLOAT               ArcTolerance;
-} THICK_BUFFER, * PTHICK_BUFFER;
+    PFLOAT Points;
+    PLINE_POINT_TYPE Types;
+    UINT Capacity;
+    UINT Count;
+    FLOAT ArcTolerance;
+} THICK_BUFFER, *PTHICK_BUFFER;
 
 /* Точка subpath'а */
 typedef struct _THICK_PT
 {
     FLOAT X;
     FLOAT Y;
-} THICK_PT, * PTHICK_PT;
+} THICK_PT, *PTHICK_PT;
 
 /* -------------------------------------------------------------
    Работа с буфером
@@ -101,7 +109,7 @@ BOOL
 GR_CALL
 ThickBufferGrow(
     _Inout_ PTHICK_BUFFER Buffer,
-    _In_ UINT             MinCapacity
+    _In_ UINT MinCapacity
 )
 {
     UINT newCapacity;
@@ -109,14 +117,20 @@ ThickBufferGrow(
     PLINE_POINT_TYPE newTypes;
 
     if (MinCapacity <= Buffer->Capacity)
+    {
         return TRUE;
+    }
 
     if (MinCapacity > THICK_LINE_MAX_POINTS)
+    {
         return FALSE;
+    }
 
     newCapacity = Buffer->Capacity == 0 ? THICK_LINE_INITIAL_CAPACITY : Buffer->Capacity * 2;
     while (newCapacity < MinCapacity)
+    {
         newCapacity *= 2;
+    }
 
     newPoints = (PFLOAT)malloc((size_t)newCapacity * 2 * sizeof(FLOAT));
     newTypes = (PLINE_POINT_TYPE)malloc((size_t)newCapacity * sizeof(LINE_POINT_TYPE));
@@ -125,7 +139,7 @@ ThickBufferGrow(
     {
         free(newPoints);
         free(newTypes);
-        return FALSE;   /* старые массивы остаются согласованными */
+        return FALSE; /* старые массивы остаются согласованными */
     }
 
     if (Buffer->Count)
@@ -147,16 +161,20 @@ static
 BOOL
 GR_CALL
 ThickBufferAppendPoint(
-    _Inout_ PTHICK_BUFFER   Buffer,
-    _In_ FLOAT              X,
-    _In_ FLOAT              Y
+    _Inout_ PTHICK_BUFFER Buffer,
+    _In_ FLOAT X,
+    _In_ FLOAT Y
 )
 {
     if (!isfinite(X) || !isfinite(Y))
+    {
         return FALSE;
+    }
 
     if (!ThickBufferGrow(Buffer, Buffer->Count + 1))
+    {
         return FALSE;
+    }
 
     Buffer->Points[Buffer->Count * 2] = X;
     Buffer->Points[Buffer->Count * 2 + 1] = Y;
@@ -171,29 +189,30 @@ static
 VOID
 GR_CALL
 ThickBufferFinishContour(
-    _Inout_ PTHICK_BUFFER   Buffer,
-    _In_ UINT               Start
+    _Inout_ PTHICK_BUFFER Buffer,
+    _In_ UINT Start
 )
 {
     if (Buffer->Count <= Start)
+    {
         return;
+    }
 
     Buffer->Types[Start] = LinePointType_Move;
-    Buffer->Types[Buffer->Count - 1] =
-        MAKE_CLOSE_POINT(Buffer->Types[Buffer->Count - 1]);
+    Buffer->Types[Buffer->Count - 1] = MAKE_CLOSE_POINT(Buffer->Types[Buffer->Count - 1]);
 }
 
 /* -------------------------------------------------------------
    Вспомогательная математика
    ------------------------------------------------------------- */
 
-   /* Единичный вектор направления P[i] -> P[j]. Точки заранее очищены от дублей. */
+/* Единичный вектор направления P[i] -> P[j]. Точки заранее очищены от дублей. */
 static
 VOID
 GR_CALL
 ThickSegDir(
-    _In_ const THICK_PT* a,
-    _In_ const THICK_PT* b,
+    _In_ const THICK_PT *a,
+    _In_ const THICK_PT *b,
     _Out_ PFLOAT pDx,
     _Out_ PFLOAT pDy
 )
@@ -218,8 +237,8 @@ static
 FLOAT
 GR_CALL
 ThickSegLen(
-    _In_ const THICK_PT* a,
-    _In_ const THICK_PT* b
+    _In_ const THICK_PT *a,
+    _In_ const THICK_PT *b
 )
 {
     FLOAT dx = b->X - a->X;
@@ -244,10 +263,19 @@ ThickArcSegmentCount(
     double step = ratio >= 1.0 ? pi / 4.0 : 4.0 * asin(sqrt(ratio));
     double segments;
 
-    if (step > pi / 4.0) step = pi / 4.0;
-    if (!(step > 0.0) || !isfinite(step)) return FALSE;
+    if (step > pi / 4.0)
+    {
+        step = pi / 4.0;
+    }
+    if (!(step > 0.0) || !isfinite(step))
+    {
+        return FALSE;
+    }
     segments = ceil(fabs((double)Sweep) / step);
-    if (segments > THICK_LINE_MAX_ARC_SEGMENTS) return FALSE;
+    if (segments > THICK_LINE_MAX_ARC_SEGMENTS)
+    {
+        return FALSE;
+    }
     *Count = segments < 1.0 ? 1u : (UINT)segments;
     return TRUE;
 }
@@ -264,17 +292,23 @@ static
 BOOL
 GR_CALL
 ThickEmitJoin(
-    _Inout_ PTHICK_BUFFER   Buffer,
-    _In_ const THICK_PT* P,
-    _In_ FLOAT d1x, _In_ FLOAT d1y, _In_ FLOAT len1,
-    _In_ FLOAT d2x, _In_ FLOAT d2y, _In_ FLOAT len2,
-    _In_ FLOAT              Half,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ FLOAT              MiterLimit
+    _Inout_ PTHICK_BUFFER Buffer,
+    _In_ const THICK_PT *P,
+    _In_ FLOAT d1x,
+    _In_ FLOAT d1y,
+    _In_ FLOAT len1,
+    _In_ FLOAT d2x,
+    _In_ FLOAT d2y,
+    _In_ FLOAT len2,
+    _In_ FLOAT Half,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ FLOAT MiterLimit
 )
 {
-    FLOAT n1x = -d1y, n1y = d1x;
-    FLOAT n2x = -d2y, n2y = d2x;
+    FLOAT n1x = -d1y;
+    FLOAT n1y = d1x;
+    FLOAT n2x = -d2y;
+    FLOAT n2y = d2x;
     FLOAT cross = d1x * d2y - d1y * d2x;
     FLOAT dot = d1x * d2x + d1y * d2y;
 
@@ -283,12 +317,20 @@ ThickEmitJoin(
     FLOAT bx = P->X + n2x * Half;
     FLOAT by = P->Y + n2y * Half;
 
-    if (dot > 1.0f) dot = 1.0f;
-    if (dot < -1.0f) dot = -1.0f;
+    if (dot > 1.0f)
+    {
+        dot = 1.0f;
+    }
+    if (dot < -1.0f)
+    {
+        dot = -1.0f;
+    }
 
     /* --- Почти прямой участок: join не нужен --- */
     if (fabsf(cross) < 1e-6f && dot > 0.0f)
+    {
         return ThickBufferAppendPoint(Buffer, ax, ay);
+    }
 
     /* --- Внутренняя сторона поворота --- */
     if (cross > 0.0f)
@@ -305,17 +347,15 @@ ThickEmitJoin(
             if (len1 >= need && len2 >= need)
             {
                 FLOAT k = Half / onePlusDot;
-                return ThickBufferAppendPoint(Buffer,
-                    P->X + (n1x + n2x) * k,
-                    P->Y + (n1y + n2y) * k);
+                return ThickBufferAppendPoint(
+                    Buffer, P->X + (n1x + n2x) * k, P->Y + (n1y + n2y) * k);
             }
         }
 
         /* Короткие сегменты / разворот: проходим через вершину
            (при заливке Winding лишние петли попадают внутрь штриха) */
-        return ThickBufferAppendPoint(Buffer, ax, ay)
-            && ThickBufferAppendPoint(Buffer, P->X, P->Y)
-            && ThickBufferAppendPoint(Buffer, bx, by);
+        return ThickBufferAppendPoint(Buffer, ax, ay) &&
+               ThickBufferAppendPoint(Buffer, P->X, P->Y) && ThickBufferAppendPoint(Buffer, bx, by);
     }
 
     /* --- Внешняя сторона поворота --- */
@@ -331,42 +371,48 @@ ThickEmitJoin(
             if (ratio <= MiterLimit)
             {
                 FLOAT k = Half / onePlusDot;
-                return ThickBufferAppendPoint(Buffer,
-                    P->X + (n1x + n2x) * k,
-                    P->Y + (n1y + n2y) * k);
+                return ThickBufferAppendPoint(
+                    Buffer, P->X + (n1x + n2x) * k, P->Y + (n1y + n2y) * k);
             }
         }
         /* лимит превышен -> bevel */
     }
     else if (JoinStyle == ThickLineJoin_Round)
     {
-        FLOAT da = atan2f(cross, dot);              /* знаковый угол n1 -> n2 */
+        FLOAT da = atan2f(cross, dot); /* знаковый угол n1 -> n2 */
         FLOAT a0 = atan2f(n1y, n1x);
-        UINT steps, i;
+        UINT steps;
+        UINT i;
 
         /* atan2(+0, -1) при точном развороте выбирает внутреннюю полудугу. */
-        if (cross == 0.0f && dot < 0.0f) da = -THICK_LINE_PI;
+        if (cross == 0.0f && dot < 0.0f)
+        {
+            da = -THICK_LINE_PI;
+        }
         if (!ThickArcSegmentCount(Half, da, Buffer->ArcTolerance, &steps))
+        {
             return FALSE;
+        }
 
         if (!ThickBufferAppendPoint(Buffer, ax, ay))
+        {
             return FALSE;
+        }
 
         for (i = 1; i < steps; ++i)
         {
             FLOAT a = a0 + da * ((FLOAT)i / (FLOAT)steps);
-            if (!ThickBufferAppendPoint(Buffer,
-                P->X + cosf(a) * Half,
-                P->Y + sinf(a) * Half))
+            if (!ThickBufferAppendPoint(Buffer, P->X + cosf(a) * Half, P->Y + sinf(a) * Half))
+            {
                 return FALSE;
+            }
         }
 
         return ThickBufferAppendPoint(Buffer, bx, by);
     }
 
     /* Bevel (и fallback для Miter) */
-    return ThickBufferAppendPoint(Buffer, ax, ay)
-        && ThickBufferAppendPoint(Buffer, bx, by);
+    return ThickBufferAppendPoint(Buffer, ax, ay) && ThickBufferAppendPoint(Buffer, bx, by);
 }
 
 /* -------------------------------------------------------------
@@ -379,45 +425,48 @@ static
 BOOL
 GR_CALL
 ThickEmitCap(
-    _Inout_ PTHICK_BUFFER   Buffer,
-    _In_ const THICK_PT* P,
-    _In_ FLOAT dx, _In_ FLOAT dy,
-    _In_ FLOAT              Half,
-    _In_ THICK_LINE_CAP     CapStyle
+    _Inout_ PTHICK_BUFFER Buffer,
+    _In_ const THICK_PT *P,
+    _In_ FLOAT dx,
+    _In_ FLOAT dy,
+    _In_ FLOAT Half,
+    _In_ THICK_LINE_CAP CapStyle
 )
 {
-    FLOAT nx = -dy, ny = dx;
+    FLOAT nx = -dy;
+    FLOAT ny = dx;
 
     if (CapStyle == ThickLineCap_Square)
     {
-        return ThickBufferAppendPoint(Buffer,
-            P->X + nx * Half + dx * Half,
-            P->Y + ny * Half + dy * Half)
-            && ThickBufferAppendPoint(Buffer,
-                P->X - nx * Half + dx * Half,
-                P->Y - ny * Half + dy * Half);
+        return ThickBufferAppendPoint(
+                   Buffer, P->X + nx * Half + dx * Half, P->Y + ny * Half + dy * Half) &&
+               ThickBufferAppendPoint(
+                   Buffer, P->X - nx * Half + dx * Half, P->Y - ny * Half + dy * Half);
     }
 
     if (CapStyle == ThickLineCap_Round)
     {
         /* От +n к -n через +d: угол убывает на PI */
         FLOAT a0 = atan2f(ny, nx);
-        UINT steps, i;
+        UINT steps;
+        UINT i;
 
         if (!ThickArcSegmentCount(Half, THICK_LINE_PI, Buffer->ArcTolerance, &steps))
+        {
             return FALSE;
+        }
 
         for (i = 1; i < steps; ++i)
         {
             FLOAT a = a0 - THICK_LINE_PI * ((FLOAT)i / (FLOAT)steps);
-            if (!ThickBufferAppendPoint(Buffer,
-                P->X + cosf(a) * Half,
-                P->Y + sinf(a) * Half))
+            if (!ThickBufferAppendPoint(Buffer, P->X + cosf(a) * Half, P->Y + sinf(a) * Half))
+            {
                 return FALSE;
+            }
         }
     }
 
-    return TRUE;    /* Flat: ничего добавлять не нужно */
+    return TRUE; /* Flat: ничего добавлять не нужно */
 }
 
 /* -------------------------------------------------------------
@@ -428,24 +477,31 @@ static
 BOOL
 GR_CALL
 ThickEmitSide(
-    _Inout_ PTHICK_BUFFER   Buffer,
-    _In_reads_(N) const THICK_PT* Pts,
-    _In_ UINT               N,
-    _In_ BOOL               IsClosed,
-    _In_ FLOAT              Half,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ FLOAT              MiterLimit
+    _Inout_ PTHICK_BUFFER Buffer,
+    _In_reads_(N) const THICK_PT *Pts,
+    _In_ UINT N,
+    _In_ BOOL IsClosed,
+    _In_ FLOAT Half,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ FLOAT MiterLimit
 )
 {
     UINT i;
-    FLOAT d1x, d1y, d2x, d2y, len1, len2;
+    FLOAT d1x;
+    FLOAT d1y;
+    FLOAT d2x;
+    FLOAT d2y;
+    FLOAT len1;
+    FLOAT len2;
 
     if (!IsClosed)
     {
         /* Первая точка */
         ThickSegDir(&Pts[0], &Pts[1], &d1x, &d1y);
         if (!ThickBufferAppendPoint(Buffer, Pts[0].X - d1y * Half, Pts[0].Y + d1x * Half))
+        {
             return FALSE;
+        }
 
         /* Внутренние вершины */
         for (i = 1; i + 1 < N; ++i)
@@ -455,10 +511,11 @@ ThickEmitSide(
             len1 = ThickSegLen(&Pts[i - 1], &Pts[i]);
             len2 = ThickSegLen(&Pts[i], &Pts[i + 1]);
 
-            if (!ThickEmitJoin(Buffer, &Pts[i],
-                d1x, d1y, len1, d2x, d2y, len2,
-                Half, JoinStyle, MiterLimit))
+            if (!ThickEmitJoin(
+                    Buffer, &Pts[i], d1x, d1y, len1, d2x, d2y, len2, Half, JoinStyle, MiterLimit))
+            {
                 return FALSE;
+            }
         }
 
         /* Последняя точка */
@@ -477,10 +534,11 @@ ThickEmitSide(
         len1 = ThickSegLen(&Pts[prev], &Pts[i]);
         len2 = ThickSegLen(&Pts[i], &Pts[next]);
 
-        if (!ThickEmitJoin(Buffer, &Pts[i],
-            d1x, d1y, len1, d2x, d2y, len2,
-            Half, JoinStyle, MiterLimit))
+        if (!ThickEmitJoin(
+                Buffer, &Pts[i], d1x, d1y, len1, d2x, d2y, len2, Half, JoinStyle, MiterLimit))
+        {
             return FALSE;
+        }
     }
 
     return TRUE;
@@ -494,28 +552,31 @@ static
 BOOL
 GR_CALL
 ThickEmitDot(
-    _Inout_ PTHICK_BUFFER   Buffer,
-    _In_ const THICK_PT* P,
-    _In_ FLOAT              Half,
-    _In_ THICK_LINE_CAP     CapStyle
+    _Inout_ PTHICK_BUFFER Buffer,
+    _In_ const THICK_PT *P,
+    _In_ FLOAT Half,
+    _In_ THICK_LINE_CAP CapStyle
 )
 {
     UINT start = Buffer->Count;
 
     if (CapStyle == ThickLineCap_Round)
     {
-        UINT steps, i;
+        UINT steps;
+        UINT i;
 
         if (!ThickArcSegmentCount(Half, 2.0f * THICK_LINE_PI, Buffer->ArcTolerance, &steps))
+        {
             return FALSE;
+        }
 
         for (i = 0; i < steps; ++i)
         {
             FLOAT a = -2.0f * THICK_LINE_PI * ((FLOAT)i / (FLOAT)steps);
-            if (!ThickBufferAppendPoint(Buffer,
-                P->X + cosf(a) * Half,
-                P->Y + sinf(a) * Half))
+            if (!ThickBufferAppendPoint(Buffer, P->X + cosf(a) * Half, P->Y + sinf(a) * Half))
+            {
                 return FALSE;
+            }
         }
     }
     else if (CapStyle == ThickLineCap_Square)
@@ -524,7 +585,9 @@ ThickEmitDot(
             !ThickBufferAppendPoint(Buffer, P->X - Half, P->Y + Half) ||
             !ThickBufferAppendPoint(Buffer, P->X + Half, P->Y + Half) ||
             !ThickBufferAppendPoint(Buffer, P->X + Half, P->Y - Half))
+        {
             return FALSE;
+        }
     }
     else
     {
@@ -542,30 +605,32 @@ static
 BOOL
 GR_CALL
 ThickLineProcessSubPath(
-    _In_ PSLineItem         LineItem,
-    _In_ UINT               StartIdx,
-    _In_ UINT               EndIdx,
-    _In_ BOOL               IsClosed,
-    _In_ FLOAT              Thickness,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ THICK_LINE_CAP     CapStyle,
-    _In_ FLOAT              MiterLimit,
-    _Inout_ PTHICK_BUFFER   Buffer
+    _In_ PSLineItem LineItem,
+    _In_ UINT StartIdx,
+    _In_ UINT EndIdx,
+    _In_ BOOL IsClosed,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _Inout_ PTHICK_BUFFER Buffer
 )
 {
     const FLOAT half = Thickness * 0.5f;
-    const UINT  srcCount = EndIdx - StartIdx + 1;
-    PTHICK_PT   pts = NULL;
-    PTHICK_PT   rev = NULL;
-    UINT        n = 0;
-    UINT        i;
-    UINT        start;
-    BOOL        ok = FALSE;
+    const UINT srcCount = EndIdx - StartIdx + 1;
+    PTHICK_PT pts = NULL;
+    PTHICK_PT rev = NULL;
+    UINT n = 0;
+    UINT i;
+    UINT start;
+    BOOL ok = FALSE;
 
     pts = (PTHICK_PT)malloc((size_t)srcCount * sizeof(THICK_PT));
     rev = (PTHICK_PT)malloc((size_t)srcCount * sizeof(THICK_PT));
     if (!pts || !rev)
+    {
         goto cleanup;
+    }
 
     /* --- Копируем точки, выбрасывая подряд идущие дубликаты --- */
     for (i = 0; i < srcCount; ++i)
@@ -578,7 +643,9 @@ ThickLineProcessSubPath(
             FLOAT dx = x - pts[n - 1].X;
             FLOAT dy = y - pts[n - 1].Y;
             if (dx * dx + dy * dy < THICK_LINE_EPSILON * THICK_LINE_EPSILON)
+            {
                 continue;
+            }
         }
 
         pts[n].X = x;
@@ -592,7 +659,9 @@ ThickLineProcessSubPath(
         FLOAT dx = pts[n - 1].X - pts[0].X;
         FLOAT dy = pts[n - 1].Y - pts[0].Y;
         if (dx * dx + dy * dy < THICK_LINE_EPSILON * THICK_LINE_EPSILON)
+        {
             n--;
+        }
     }
 
     if (n == 0)
@@ -609,45 +678,62 @@ ThickLineProcessSubPath(
 
     /* Замкнутый путь из двух точек вырожден в линию туда-обратно */
     if (IsClosed && n < 3)
+    {
         IsClosed = FALSE;
+    }
 
     /* Реверс-копия: левая сторона реверсного пути = правая сторона исходного */
     for (i = 0; i < n; ++i)
+    {
         rev[i] = pts[n - 1 - i];
+    }
 
     if (IsClosed)
     {
         /* Два контура противоположной ориентации: кольцо при заливке Winding */
         start = Buffer->Count;
         if (!ThickEmitSide(Buffer, pts, n, TRUE, half, JoinStyle, MiterLimit))
+        {
             goto cleanup;
+        }
         ThickBufferFinishContour(Buffer, start);
 
         start = Buffer->Count;
         if (!ThickEmitSide(Buffer, rev, n, TRUE, half, JoinStyle, MiterLimit))
+        {
             goto cleanup;
+        }
         ThickBufferFinishContour(Buffer, start);
     }
     else
     {
-        FLOAT dx, dy;
+        FLOAT dx;
+        FLOAT dy;
 
         /* Один контур: левая сторона -> cap на конце -> правая сторона -> cap в начале */
         start = Buffer->Count;
 
         if (!ThickEmitSide(Buffer, pts, n, FALSE, half, JoinStyle, MiterLimit))
+        {
             goto cleanup;
+        }
 
         ThickSegDir(&pts[n - 2], &pts[n - 1], &dx, &dy);
         if (!ThickEmitCap(Buffer, &pts[n - 1], dx, dy, half, CapStyle))
+        {
             goto cleanup;
+        }
 
         if (!ThickEmitSide(Buffer, rev, n, FALSE, half, JoinStyle, MiterLimit))
+        {
             goto cleanup;
+        }
 
         ThickSegDir(&rev[n - 2], &rev[n - 1], &dx, &dy);
         if (!ThickEmitCap(Buffer, &rev[n - 1], dx, dy, half, CapStyle))
+        {
             goto cleanup;
+        }
 
         ThickBufferFinishContour(Buffer, start);
     }
@@ -667,12 +753,12 @@ static
 PSLineItem
 GR_CALL
 ThickLineBuildGeometry(
-    _In_ PSLineItem         LineItem,
-    _In_ FLOAT              Thickness,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ THICK_LINE_CAP     CapStyle,
-    _In_ FLOAT              MiterLimit,
-    _In_ FLOAT              ArcTolerance
+    _In_ PSLineItem LineItem,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
 )
 {
     THICK_BUFFER buffer;
@@ -682,7 +768,9 @@ ThickLineBuildGeometry(
     BOOL inSubPath = FALSE;
 
     if (!LineItem || LineItem->PointCount < 1)
+    {
         return NULL;
+    }
 
     ThickBufferInit(&buffer);
     buffer.ArcTolerance = ArcTolerance;
@@ -697,8 +785,15 @@ ThickLineBuildGeometry(
             /* Завершаем предыдущий незамкнутый subpath */
             if (inSubPath)
             {
-                if (!ThickLineProcessSubPath(LineItem, subPathStart, i - 1, FALSE,
-                    Thickness, JoinStyle, CapStyle, MiterLimit, &buffer))
+                if (!ThickLineProcessSubPath(LineItem,
+                                             subPathStart,
+                                             i - 1,
+                                             FALSE,
+                                             Thickness,
+                                             JoinStyle,
+                                             CapStyle,
+                                             MiterLimit,
+                                             &buffer))
                 {
                     ThickBufferUninit(&buffer);
                     return NULL;
@@ -717,8 +812,15 @@ ThickLineBuildGeometry(
 
         if (IS_CLOSE_POINT(rawType))
         {
-            if (!ThickLineProcessSubPath(LineItem, subPathStart, i, TRUE,
-                Thickness, JoinStyle, CapStyle, MiterLimit, &buffer))
+            if (!ThickLineProcessSubPath(LineItem,
+                                         subPathStart,
+                                         i,
+                                         TRUE,
+                                         Thickness,
+                                         JoinStyle,
+                                         CapStyle,
+                                         MiterLimit,
+                                         &buffer))
             {
                 ThickBufferUninit(&buffer);
                 return NULL;
@@ -730,9 +832,15 @@ ThickLineBuildGeometry(
     /* Последний незакрытый subpath */
     if (inSubPath)
     {
-        if (!ThickLineProcessSubPath(LineItem, subPathStart, LineItem->PointCount - 1,
-            LineItem->ClosePath,
-            Thickness, JoinStyle, CapStyle, MiterLimit, &buffer))
+        if (!ThickLineProcessSubPath(LineItem,
+                                     subPathStart,
+                                     LineItem->PointCount - 1,
+                                     LineItem->ClosePath,
+                                     Thickness,
+                                     JoinStyle,
+                                     CapStyle,
+                                     MiterLimit,
+                                     &buffer))
         {
             ThickBufferUninit(&buffer);
             return NULL;
@@ -771,7 +879,9 @@ ThickLineHasBezier(
     for (i = 0; i < LineItem->PointCount; ++i)
     {
         if (GET_POINT_TYPE(LineItem->PointTypes[i]) == LinePointType_BezierControl)
+        {
             return TRUE;
+        }
     }
 
     return FALSE;
@@ -784,12 +894,12 @@ static
 PSThickLineItem
 GR_CALL
 ThickLineItemCreateInternal(
-    _In_ PSLineItem         LineItem,
-    _In_ FLOAT              Thickness,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ THICK_LINE_CAP     CapStyle,
-    _In_ FLOAT              MiterLimit,
-    _In_ FLOAT              ArcTolerance
+    _In_ PSLineItem LineItem,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
 )
 {
     PSThickLineItem item;
@@ -797,21 +907,29 @@ ThickLineItemCreateInternal(
 
     UINT i;
 
-    if (!LineItem || !LineItem->Points || !LineItem->PointTypes ||
-        !isfinite(Thickness) || Thickness * 0.5f <= 0.0f ||
-        !isfinite(MiterLimit) || MiterLimit < 1.0f ||
-        !isfinite(ArcTolerance) || ArcTolerance <= 0.0f ||
-        JoinStyle < ThickLineJoin_Miter || JoinStyle > ThickLineJoin_Bevel ||
-        CapStyle < ThickLineCap_Flat || CapStyle > ThickLineCap_Square)
+    if (!LineItem || !LineItem->Points || !LineItem->PointTypes || !isfinite(Thickness) ||
+        Thickness * 0.5f <= 0.0f || !isfinite(MiterLimit) || MiterLimit < 1.0f ||
+        !isfinite(ArcTolerance) || ArcTolerance <= 0.0f || JoinStyle < ThickLineJoin_Miter ||
+        JoinStyle > ThickLineJoin_Bevel || CapStyle < ThickLineCap_Flat ||
+        CapStyle > ThickLineCap_Square)
+    {
         return NULL;
+    }
 
     for (i = 0; i < LineItem->PointCount; ++i)
+    {
         if (!isfinite(LineItem->Points[i * 2]) || !isfinite(LineItem->Points[i * 2 + 1]))
+        {
             return NULL;
+        }
+    }
 
-    geometry = ThickLineBuildGeometry(LineItem, Thickness, JoinStyle, CapStyle, MiterLimit, ArcTolerance);
+    geometry =
+        ThickLineBuildGeometry(LineItem, Thickness, JoinStyle, CapStyle, MiterLimit, ArcTolerance);
     if (!geometry)
+    {
         return NULL;
+    }
 
     item = (PSThickLineItem)malloc(sizeof(SThickLineItem));
     if (!item)
@@ -833,63 +951,73 @@ ThickLineItemCreateInternal(
 /* -------------------------------------------------------------
    ThickLineItemInit
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSThickLineItem
-GR_CALL
-ThickLineItemInit(
-    _In_ PSLineItem         LineItem,
-    _In_ FLOAT              Thickness,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ THICK_LINE_CAP     CapStyle,
-    _In_ FLOAT              MiterLimit
-)
+_Check_return_ _Ret_maybenull_ PSThickLineItem GR_CALL
+ThickLineItemInit(_In_ PSLineItem LineItem,
+                  _In_ FLOAT Thickness,
+                  _In_ THICK_LINE_JOIN JoinStyle,
+                  _In_ THICK_LINE_CAP CapStyle,
+                  _In_ FLOAT MiterLimit)
 {
-    return ThickLineItemInitEx(LineItem, Thickness, JoinStyle, CapStyle,
-        MiterLimit, THICK_LINE_DEFAULT_ARC_TOLERANCE);
+    return ThickLineItemInitEx(
+        LineItem, Thickness, JoinStyle, CapStyle, MiterLimit, THICK_LINE_DEFAULT_ARC_TOLERANCE);
 }
 
 PSThickLineItem
 GR_CALL
 ThickLineItemInitEx(
-    PSLineItem LineItem, FLOAT Thickness, THICK_LINE_JOIN JoinStyle,
-    THICK_LINE_CAP CapStyle, FLOAT MiterLimit, FLOAT ArcTolerance)
+    _In_ PSLineItem LineItem,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
+)
 {
     if (!LineItem || LineItem->Type != LineItemType_Flatten)
+    {
         return NULL;
+    }
 
     if (!LineItem->PointTypes || ThickLineHasBezier(LineItem))
+    {
         return NULL;
+    }
 
-    return ThickLineItemCreateInternal(LineItem, Thickness, JoinStyle, CapStyle, MiterLimit, ArcTolerance);
+    return ThickLineItemCreateInternal(
+        LineItem, Thickness, JoinStyle, CapStyle, MiterLimit, ArcTolerance);
 }
 
 /* -------------------------------------------------------------
    ThickLineItemInitFromFlatten
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSThickLineItem
-GR_CALL
-ThickLineItemInitFromFlatten(
-    _In_ PSLineItem         FlattenLineItem,
-    _In_ FLOAT              Thickness,
-    _In_ THICK_LINE_JOIN    JoinStyle,
-    _In_ THICK_LINE_CAP     CapStyle,
-    _In_ FLOAT              MiterLimit
-)
+_Check_return_ _Ret_maybenull_ PSThickLineItem GR_CALL
+ThickLineItemInitFromFlatten(_In_ PSLineItem FlattenLineItem,
+                             _In_ FLOAT Thickness,
+                             _In_ THICK_LINE_JOIN JoinStyle,
+                             _In_ THICK_LINE_CAP CapStyle,
+                             _In_ FLOAT MiterLimit)
 {
-    return ThickLineItemInitFromFlattenEx(FlattenLineItem, Thickness, JoinStyle, CapStyle,
-        MiterLimit, THICK_LINE_DEFAULT_ARC_TOLERANCE);
+    return ThickLineItemInitFromFlattenEx(FlattenLineItem,
+                                          Thickness,
+                                          JoinStyle,
+                                          CapStyle,
+                                          MiterLimit,
+                                          THICK_LINE_DEFAULT_ARC_TOLERANCE);
 }
 
 PSThickLineItem
 GR_CALL
 ThickLineItemInitFromFlattenEx(
-    PSLineItem FlattenLineItem, FLOAT Thickness, THICK_LINE_JOIN JoinStyle,
-    THICK_LINE_CAP CapStyle, FLOAT MiterLimit, FLOAT ArcTolerance)
+    _In_ PSLineItem FlattenLineItem,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
+)
 {
-    return ThickLineItemInitEx(FlattenLineItem, Thickness, JoinStyle, CapStyle, MiterLimit, ArcTolerance);
+    return ThickLineItemInitEx(
+        FlattenLineItem, Thickness, JoinStyle, CapStyle, MiterLimit, ArcTolerance);
 }
 
 /* -------------------------------------------------------------
@@ -922,6 +1050,7 @@ ThickLineItemFreeCallback(
 )
 {
     if (StageData)
+    {
         ThickLineItemFree((PSThickLineItem)StageData);
+    }
 }
-

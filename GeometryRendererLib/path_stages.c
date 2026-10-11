@@ -17,12 +17,8 @@ PathStagesInitializeListHead(
     ListHead->Blink = ListHead;
 }
 
-static
-UINT8
-GR_CALL
-PathStagesIsListEmpty(
-    _In_ PLIST_ENTRY ListHead
-)
+static UINT8 GR_CALL
+PathStagesIsListEmpty(_In_ PLIST_ENTRY ListHead)
 {
     return (UINT8)(ListHead->Flink == ListHead);
 }
@@ -85,14 +81,7 @@ PathStagesUninitialize(
     PathStagesClear(PathStages);
 }
 
-_Check_return_
-_Success_(return != NULL)
-_Ret_maybenull_
-PSPathStages
-GR_CALL
-PathStagesCreate(
-    VOID
-)
+_Check_return_ _Success_(return != NULL) _Ret_maybenull_ PSPathStages GR_CALL PathStagesCreate(VOID)
 {
     PSPathStages PathStages;
 
@@ -114,7 +103,7 @@ PathStagesDestroy(
     if (PathStages != NULL)
     {
         PathStagesUninitialize(PathStages);
-        //free(PathStages);
+        // free(PathStages);
     }
 }
 
@@ -122,17 +111,12 @@ PathStagesDestroy(
  *  Манипуляции с этапами
  *===========================================================================*/
 
-_Check_return_
-_Success_(return != 0)
-INT32
-GR_CALL
-PathStagesAddStage(
-    _Inout_ PSPathStages PathStages,
-    _In_ EPathStageType StageType,
-    _In_ PVOID StageData,
-    _In_opt_ PFN_PATH_STAGE_FREE FreeCallback,
-    _In_ GET_PATH_STAGE_PROPERTY GetPropertyCallback
-)
+_Check_return_ _Success_(return != 0) INT32 GR_CALL
+    PathStagesAddStage(_Inout_ PSPathStages PathStages,
+                       _In_ EPathStageType StageType,
+                       _In_ PVOID StageData,
+                       _In_opt_ PFN_PATH_STAGE_FREE FreeCallback,
+                       _In_ GET_PATH_STAGE_PROPERTY GetPropertyCallback)
 {
     PSPathStageEntry Entry;
     PSPathStageEntry LastStage;
@@ -161,6 +145,8 @@ PathStagesAddStage(
     Entry->StageType = StageType;
     Entry->StageData = StageData;
     Entry->FreeCallback = FreeCallback;
+    /* Каждый айтем определяет свой контракт свойств. Контейнер хранит
+       обработчик рядом с callback освобождения и не анализирует StageData. */
     Entry->GetPropertyCallback = GetPropertyCallback;
     Entry->Base.type = EOT_PipeStageEntry;
 
@@ -231,13 +217,8 @@ PathStagesClear(
  *  Доступ к этапам
  *===========================================================================*/
 
-_Ret_maybenull_
-_Post_writable_byte_size_(sizeof(SPathStageEntry))
-PSPathStageEntry
-GR_CALL
-PathStagesGetLastStage(
-    _In_ PSPathStages PathStages
-)
+_Ret_maybenull_ _Post_writable_byte_size_(sizeof(SPathStageEntry)) PSPathStageEntry GR_CALL
+    PathStagesGetLastStage(_In_ PSPathStages PathStages)
 {
     if (PathStages == NULL || PathStagesIsListEmpty(&PathStages->Head))
     {
@@ -247,13 +228,8 @@ PathStagesGetLastStage(
     return CONTAINING_RECORD(PathStages->Head.Blink, SPathStageEntry, ListEntry);
 }
 
-_Ret_maybenull_
-_Post_writable_byte_size_(sizeof(SPathStageEntry))
-PSPathStageEntry
-GR_CALL
-PathStagesGetFirstStage(
-    _In_ PSPathStages PathStages
-)
+_Ret_maybenull_ _Post_writable_byte_size_(sizeof(SPathStageEntry)) PSPathStageEntry GR_CALL
+    PathStagesGetFirstStage(_In_ PSPathStages PathStages)
 {
     if (PathStages == NULL || PathStagesIsListEmpty(&PathStages->Head))
     {
@@ -312,11 +288,16 @@ PathStagesEntryGetProperty(
 )
 {
     if (!pOutLen)
+    {
         return FALSE;
+    }
     *pOutLen = 0;
     if (!pEntry || !pEntry->StageData || !pEntry->GetPropertyCallback)
+    {
         return FALSE;
+    }
 
+    /* Запрос размера и копирование значения обслуживает модуль айтема. */
     return pEntry->GetPropertyCallback(pEntry, eProp, pOutData, pOutLen);
 }
 
@@ -330,14 +311,20 @@ PathStagesGetProperty(
 )
 {
     if (!pOutLen)
+    {
         return FALSE;
+    }
     *pOutLen = 0;
     if (!pObject)
+    {
         return FALSE;
+    }
 
     if (((PSBaseObject)pObject)->type == EOT_PipeStageEntry)
-        return PathStagesEntryGetProperty((PSPathStageEntry)pObject,
-            (EStageProps)eProp, pOutData, pOutLen);
+    {
+        return PathStagesEntryGetProperty(
+            (PSPathStageEntry)pObject, (EStageProps)eProp, pOutData, pOutLen);
+    }
 
     return FALSE;
 }

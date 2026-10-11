@@ -14,25 +14,14 @@ FlattenItemGetProperty(
     _Out_ PINT pOutLen
 );
 
-   /* -------------------------------------------------------------
-      Создание аппроксимированного (flattened) айтема из логического
-      ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSLineItem
-GR_CALL
-FlattenItemInit(
-    _In_ PSLineItem LineItem
-);
+/* -------------------------------------------------------------
+   Создание аппроксимированного (flattened) айтема из логического
+   ------------------------------------------------------------- */
+_Check_return_ _Ret_maybenull_ PSLineItem GR_CALL
+FlattenItemInit(_In_ PSLineItem LineItem);
 
-_Check_return_
-_Ret_maybenull_
-PSLineItem
-GR_CALL
-FlattenItemInitEx(
-    _In_ PSLineItem LineItem,
-    _In_ FLOAT      Flatness
-);
+_Check_return_ _Ret_maybenull_ PSLineItem GR_CALL
+FlattenItemInitEx(_In_ PSLineItem LineItem, _In_ FLOAT Flatness);
 
 /* -------------------------------------------------------------
    Callback для освобождения данных этапа в PathStages
@@ -42,5 +31,3 @@ GR_CALL
 FlattenItemFree(
     _In_ PVOID StageData
 );
-
-

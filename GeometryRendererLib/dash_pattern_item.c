@@ -11,45 +11,51 @@ DashPatternItemGetProperty(
 {
     PSDashPatternItem pDash;
     if (!pOutLen)
+    {
         return FALSE;
+    }
     *pOutLen = 0;
     if (!pEntry || !pEntry->StageData)
+    {
         return FALSE;
+    }
 
     pDash = (PSDashPatternItem)pEntry->StageData;
     if (IS_LOGICAL_ITEM_PROPS(eProp))
+    {
         return LineItemGetPathProperty(pDash->DashedLine, eProp, pOutData, pOutLen);
+    }
 
     switch (eProp)
     {
-        case ESP_TYPE:
-            return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
-        case ESP_DASH_COUNT:
-            return CopyObjectProperty(&pDash->DashCount, sizeof(pDash->DashCount), pOutData, pOutLen);
-        case ESP_DASH_OFFSET:
-            return CopyObjectProperty(&pDash->DashOffset, sizeof(pDash->DashOffset), pOutData, pOutLen);
-        default:
-            return FALSE;
+    case ESP_TYPE:
+        return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
+    case ESP_DASH_COUNT:
+        return CopyObjectProperty(&pDash->DashCount, sizeof(pDash->DashCount), pOutData, pOutLen);
+    case ESP_DASH_OFFSET:
+        return CopyObjectProperty(&pDash->DashOffset, sizeof(pDash->DashOffset), pOutData, pOutLen);
+    default:
+        return FALSE;
     }
 }
 
 /* -------------------------------------------------------------
    Внутренние константы
    ------------------------------------------------------------- */
-#define DASH_PATTERN_INITIAL_CAPACITY   16
-#define DASH_PATTERN_EPSILON            0.0001f
+#define DASH_PATTERN_INITIAL_CAPACITY 16
+#define DASH_PATTERN_EPSILON 0.0001f
 
-   /* -------------------------------------------------------------
-      Внутренний буфер для накопления точек
-      ------------------------------------------------------------- */
+/* -------------------------------------------------------------
+   Внутренний буфер для накопления точек
+   ------------------------------------------------------------- */
 typedef struct _DASH_BUFFER
 {
-    PFLOAT              Points;
-    PLINE_POINT_TYPE    Types;
-    UINT                Capacity;
-    UINT                Count;
-    BOOL                NeedsMove;
-} DASH_BUFFER, * PDASH_BUFFER;
+    PFLOAT Points;
+    PLINE_POINT_TYPE Types;
+    UINT Capacity;
+    UINT Count;
+    BOOL NeedsMove;
+} DASH_BUFFER, *PDASH_BUFFER;
 
 /* -------------------------------------------------------------
    Внутренние функции буфера
@@ -97,7 +103,7 @@ BOOL
 GR_CALL
 DashBufferGrow(
     _Inout_ PDASH_BUFFER Buffer,
-    _In_ UINT            MinCapacity
+    _In_ UINT MinCapacity
 )
 {
     UINT newCapacity;
@@ -137,10 +143,10 @@ static
 BOOL
 GR_CALL
 DashBufferAppendPoint(
-    _Inout_ PDASH_BUFFER    Buffer,
-    _In_ FLOAT              X,
-    _In_ FLOAT              Y,
-    _In_ LINE_POINT_TYPE    Type
+    _Inout_ PDASH_BUFFER Buffer,
+    _In_ FLOAT X,
+    _In_ FLOAT Y,
+    _In_ LINE_POINT_TYPE Type
 )
 {
     if (!DashBufferGrow(Buffer, Buffer->Count + 1))
@@ -214,7 +220,7 @@ FLOAT
 GR_CALL
 DashPatternTotalLength(
     _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT               DashCount
+    _In_ UINT DashCount
 )
 {
     FLOAT total;
@@ -305,11 +311,11 @@ static
 VOID
 GR_CALL
 DashPatternInterpolate(
-    _In_ FLOAT  X0,
-    _In_ FLOAT  Y0,
-    _In_ FLOAT  X1,
-    _In_ FLOAT  Y1,
-    _In_ FLOAT  T,
+    _In_ FLOAT X0,
+    _In_ FLOAT Y0,
+    _In_ FLOAT X1,
+    _In_ FLOAT Y1,
+    _In_ FLOAT T,
     _Out_ PFLOAT pOutX,
     _Out_ PFLOAT pOutY
 )
@@ -338,27 +344,29 @@ static
 BOOL
 GR_CALL
 DashPatternSplitSegment(
-    _In_ FLOAT              X0,
-    _In_ FLOAT              Y0,
-    _In_ FLOAT              X1,
-    _In_ FLOAT              Y1,
+    _In_ FLOAT X0,
+    _In_ FLOAT Y0,
+    _In_ FLOAT X1,
+    _In_ FLOAT Y1,
     _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT               DashCount,
-    _Inout_ PUINT           pSegmentIndex,
-    _Inout_ PFLOAT          pSegmentRemain,
-    _Inout_ PDASH_BUFFER    Buffer
+    _In_ UINT DashCount,
+    _Inout_ PUINT pSegmentIndex,
+    _Inout_ PFLOAT pSegmentRemain,
+    _Inout_ PDASH_BUFFER Buffer
 )
 {
-    FLOAT segLen;           // длина текущего геометрического отрезка
-    FLOAT curX, curY;       // текущая позиция "пера"
-    FLOAT remainInSeg;      // сколько ещё осталось пройти по этому отрезку
-    FLOAT remainInDash;     // сколько осталось в текущем элементе паттерна (dash/gap)
-    FLOAT step;             // сколько пройдём на этой итерации
-    FLOAT traveled;         // сколько уже прошли от начала отрезка (0..segLen)
-    UINT  segIdx;           // индекс текущего элемента в DashLengths
-    BOOL  isDash;           // TRUE = сейчас рисуем, FALSE = сейчас gap
-    FLOAT ix, iy;           // интерполированная точка
-    FLOAT t;                // параметр интерполяции [0..1]
+    FLOAT segLen;       // длина текущего геометрического отрезка
+    FLOAT curX;
+    FLOAT curY;   // текущая позиция "пера"
+    FLOAT remainInSeg;  // сколько ещё осталось пройти по этому отрезку
+    FLOAT remainInDash; // сколько осталось в текущем элементе паттерна (dash/gap)
+    FLOAT step;         // сколько пройдём на этой итерации
+    FLOAT traveled;     // сколько уже прошли от начала отрезка (0..segLen)
+    UINT segIdx;        // индекс текущего элемента в DashLengths
+    BOOL isDash;        // TRUE = сейчас рисуем, FALSE = сейчас gap
+    FLOAT ix;
+    FLOAT iy;       // интерполированная точка
+    FLOAT t;            // параметр интерполяции [0..1]
 
     //----------------------------------------------------------
     // 1. Считаем длину отрезка. Если он вырожденный — выходим.
@@ -411,7 +419,10 @@ DashPatternSplitSegment(
 
         // Параметр t для линейной интерполяции (с защитой от float-ошибок)
         t = traveled / segLen;
-        if (t > 1.0f) t = 1.0f;
+        if (t > 1.0f)
+        {
+            t = 1.0f;
+        }
 
         // Получаем абсолютные координаты точки на отрезке
         DashPatternInterpolate(X0, Y0, X1, Y1, t, &ix, &iy);
@@ -435,7 +446,7 @@ DashPatternSplitSegment(
             Buffer->NeedsMove = FALSE;
         }
         else
-        {      
+        {
             // Ничего не пишем, только двигаем перо
             Buffer->NeedsMove = TRUE;
         }
@@ -487,22 +498,27 @@ static
 BOOL
 GR_CALL
 DashPatternProcessSubPath(
-    _In_ PSLineItem         LineItem,
-    _In_ UINT               StartIdx,
-    _In_ UINT               EndIdx,
-    _In_ BOOL               isClosed,          // <-- новый параметр
+    _In_ PSLineItem LineItem,
+    _In_ UINT StartIdx,
+    _In_ UINT EndIdx,
+    _In_ BOOL isClosed,
     _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT               DashCount,
-    _Inout_ PUINT           pSegmentIndex,
-    _Inout_ PFLOAT          pSegmentRemain,
-    _Inout_ PDASH_BUFFER    Buffer
+    _In_ UINT DashCount,
+    _Inout_ PUINT pSegmentIndex,
+    _Inout_ PFLOAT pSegmentRemain,
+    _Inout_ PDASH_BUFFER Buffer
 )
 {
     UINT i;
-    FLOAT x0, y0, x1, y1;
+    FLOAT x0;
+    FLOAT y0;
+    FLOAT x1;
+    FLOAT y1;
 
     if (StartIdx >= EndIdx)
+    {
         return TRUE;
+    }
 
     // Новый исходный subpath не соединяется с предыдущим штрихом.
     Buffer->NeedsMove = TRUE;
@@ -514,16 +530,15 @@ DashPatternProcessSubPath(
     for (i = StartIdx + 1; i <= EndIdx; i++)
     {
         if (GET_POINT_TYPE(LineItem->PointTypes[i]) == LinePointType_Move)
+        {
             break;
+        }
 
         x1 = LineItem->Points[i * 2];
         y1 = LineItem->Points[i * 2 + 1];
 
         if (!DashPatternSplitSegment(
-            x0, y0, x1, y1,
-            DashLengths, DashCount,
-            pSegmentIndex, pSegmentRemain,
-            Buffer))
+                x0, y0, x1, y1, DashLengths, DashCount, pSegmentIndex, pSegmentRemain, Buffer))
         {
             return FALSE;
         }
@@ -539,12 +554,15 @@ DashPatternProcessSubPath(
         FLOAT firstY = LineItem->Points[StartIdx * 2 + 1];
 
         // x0/y0 сейчас содержат координаты последней точки subpath
-        if (!DashPatternSplitSegment(
-            x0, y0,
-            firstX, firstY,
-            DashLengths, DashCount,
-            pSegmentIndex, pSegmentRemain,
-            Buffer))
+        if (!DashPatternSplitSegment(x0,
+                                     y0,
+                                     firstX,
+                                     firstY,
+                                     DashLengths,
+                                     DashCount,
+                                     pSegmentIndex,
+                                     pSegmentRemain,
+                                     Buffer))
         {
             return FALSE;
         }
@@ -562,10 +580,10 @@ static
 PSLineItem
 GR_CALL
 DashPatternBuildDashedLine(
-    _In_ PSLineItem         LineItem,
+    _In_ PSLineItem LineItem,
     _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT               DashCount,
-    _In_ FLOAT              DashOffset
+    _In_ UINT DashCount,
+    _In_ FLOAT DashOffset
 )
 {
     DASH_BUFFER buffer;
@@ -606,12 +624,15 @@ DashPatternBuildDashedLine(
         {
             if (inSubPath)
             {
-                if (!DashPatternProcessSubPath(
-                    LineItem, subPathStart, i - 1,
-                    FALSE,
-                    DashLengths, DashCount,
-                    &segIdx, &segRemain,
-                    &buffer))
+                if (!DashPatternProcessSubPath(LineItem,
+                                               subPathStart,
+                                               i - 1,
+                                               FALSE,
+                                               DashLengths,
+                                               DashCount,
+                                               &segIdx,
+                                               &segRemain,
+                                               &buffer))
                 {
                     DashBufferUninit(&buffer);
                     return NULL;
@@ -632,12 +653,15 @@ DashPatternBuildDashedLine(
         {
             if (inSubPath)
             {
-                if (!DashPatternProcessSubPath(
-                    LineItem, subPathStart, i,
-                    TRUE,
-                    DashLengths, DashCount,
-                    &segIdx, &segRemain,
-                    &buffer))
+                if (!DashPatternProcessSubPath(LineItem,
+                                               subPathStart,
+                                               i,
+                                               TRUE,
+                                               DashLengths,
+                                               DashCount,
+                                               &segIdx,
+                                               &segRemain,
+                                               &buffer))
                 {
                     DashBufferUninit(&buffer);
                     return NULL;
@@ -650,12 +674,15 @@ DashPatternBuildDashedLine(
 
     if (inSubPath)
     {
-        if (!DashPatternProcessSubPath(
-            LineItem, subPathStart, LineItem->PointCount - 1,
-            FALSE,
-            DashLengths, DashCount,
-            &segIdx, &segRemain,
-            &buffer))
+        if (!DashPatternProcessSubPath(LineItem,
+                                       subPathStart,
+                                       LineItem->PointCount - 1,
+                                       FALSE,
+                                       DashLengths,
+                                       DashCount,
+                                       &segIdx,
+                                       &segRemain,
+                                       &buffer))
         {
             DashBufferUninit(&buffer);
             return NULL;
@@ -687,10 +714,10 @@ static
 PSDashPatternItem
 GR_CALL
 DashPatternItemCreateInternal(
-    _In_ PSLineItem         LineItem,
+    _In_ PSLineItem LineItem,
     _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT               DashCount,
-    _In_ FLOAT              DashOffset
+    _In_ UINT DashCount,
+    _In_ FLOAT DashOffset
 )
 {
     PSDashPatternItem dashItem;
@@ -730,16 +757,11 @@ DashPatternItemCreateInternal(
 /* -------------------------------------------------------------
    DashPatternItemInit — из логического айтема (без Bezier точек)
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSDashPatternItem
-GR_CALL
-DashPatternItemInit(
-    _In_ PSLineItem     LineItem,
-    _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT           DashCount,
-    _In_ FLOAT          DashOffset
-)
+_Check_return_ _Ret_maybenull_ PSDashPatternItem GR_CALL
+DashPatternItemInit(_In_ PSLineItem LineItem,
+                    _In_reads_(DashCount) PCFLOAT DashLengths,
+                    _In_ UINT DashCount,
+                    _In_ FLOAT DashOffset)
 {
     if (LineItem == NULL || DashLengths == NULL || DashCount == 0)
     {
@@ -762,16 +784,11 @@ DashPatternItemInit(
 /* -------------------------------------------------------------
    DashPatternItemInitFromFlatten — из аппроксимированного айтема
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSDashPatternItem
-GR_CALL
-DashPatternItemInitFromFlatten(
-    _In_ PSLineItem     FlattenLineItem,
-    _In_reads_(DashCount) PCFLOAT DashLengths,
-    _In_ UINT           DashCount,
-    _In_ FLOAT          DashOffset
-)
+_Check_return_ _Ret_maybenull_ PSDashPatternItem GR_CALL
+DashPatternItemInitFromFlatten(_In_ PSLineItem FlattenLineItem,
+                               _In_reads_(DashCount) PCFLOAT DashLengths,
+                               _In_ UINT DashCount,
+                               _In_ FLOAT DashOffset)
 {
     if (FlattenLineItem == NULL || DashLengths == NULL || DashCount == 0)
     {
@@ -830,4 +847,3 @@ DashPatternItemFreeCallback(
         DashPatternItemFree((PSDashPatternItem)StageData);
     }
 }
-

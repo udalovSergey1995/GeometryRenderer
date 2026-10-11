@@ -12,32 +12,42 @@ LineItemGetPathProperty(
 {
     BOOL isBezier;
     if (!pOutLen)
+    {
         return FALSE;
+    }
     *pOutLen = 0;
     if (!pLine)
+    {
         return FALSE;
+    }
 
     switch (eProp)
     {
-        case ESP_IS_CLOSED:
-            return CopyObjectProperty(&pLine->ClosePath, sizeof(pLine->ClosePath), pOutData, pOutLen);
-        case ESP_IS_BESIERE:
-            isBezier = pLine->Type == LineItemType_Bezier;
-            return CopyObjectProperty(&isBezier, sizeof(isBezier), pOutData, pOutLen);
-        case ESP_PATH_LEN:
-            return CopyObjectProperty(&pLine->PointCount, sizeof(pLine->PointCount), pOutData, pOutLen);
-        case ESP_PATH_DATA:
-            if (pLine->PointCount > INT_MAX / (2 * sizeof(FLOAT)))
-                return FALSE;
-            return CopyObjectProperty(pLine->Points, (INT)(pLine->PointCount * 2 * sizeof(FLOAT)),
-                pOutData, pOutLen);
-        case ESP_PATH_FLAGS:
-            if (pLine->PointCount > INT_MAX / sizeof(LINE_POINT_TYPE))
-                return FALSE;
-            return CopyObjectProperty(pLine->PointTypes, (INT)(pLine->PointCount * sizeof(LINE_POINT_TYPE)),
-                pOutData, pOutLen);
-        default:
+    case ESP_IS_CLOSED:
+        return CopyObjectProperty(&pLine->ClosePath, sizeof(pLine->ClosePath), pOutData, pOutLen);
+    case ESP_IS_BESIERE:
+        isBezier = pLine->Type == LineItemType_Bezier;
+        return CopyObjectProperty(&isBezier, sizeof(isBezier), pOutData, pOutLen);
+    case ESP_PATH_LEN:
+        return CopyObjectProperty(&pLine->PointCount, sizeof(pLine->PointCount), pOutData, pOutLen);
+    case ESP_PATH_DATA:
+        if (pLine->PointCount > INT_MAX / (2 * sizeof(FLOAT)))
+        {
             return FALSE;
+        }
+        return CopyObjectProperty(
+            pLine->Points, (INT)(pLine->PointCount * 2 * sizeof(FLOAT)), pOutData, pOutLen);
+    case ESP_PATH_FLAGS:
+        if (pLine->PointCount > INT_MAX / sizeof(LINE_POINT_TYPE))
+        {
+            return FALSE;
+        }
+        return CopyObjectProperty(pLine->PointTypes,
+                                  (INT)(pLine->PointCount * sizeof(LINE_POINT_TYPE)),
+                                  pOutData,
+                                  pOutLen);
+    default:
+        return FALSE;
     }
 }
 
@@ -51,13 +61,19 @@ LineItemGetProperty(
 )
 {
     if (!pOutLen)
+    {
         return FALSE;
+    }
     *pOutLen = 0;
     if (!pEntry || !pEntry->StageData)
+    {
         return FALSE;
+    }
 
     if (eProp == ESP_TYPE)
+    {
         return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
+    }
 
     return LineItemGetPathProperty((PSLineItem)pEntry->StageData, eProp, pOutData, pOutLen);
 }
@@ -65,21 +81,14 @@ LineItemGetProperty(
 /* -------------------------------------------------------------
    LineItemAllocate
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-PSLineItem
-GR_CALL
-LineItemAllocate(
-    _In_ UINT           PointCount,
-    _In_ LINE_ITEM_TYPE Type,
-    _In_ BOOL           ClosePath
-    )
+_Check_return_ _Ret_maybenull_ PSLineItem GR_CALL
+LineItemAllocate(_In_ UINT PointCount, _In_ LINE_ITEM_TYPE Type, _In_ BOOL ClosePath)
 {
-    PSLineItem      item;
-    PFLOAT          points;
+    PSLineItem item;
+    PFLOAT points;
     PLINE_POINT_TYPE pointTypes;
-    size_t          pointsSize;
-    size_t          typesSize;
+    size_t pointsSize;
+    size_t typesSize;
 
     item = (PSLineItem)malloc(sizeof(SLineItem));
     if (item == NULL)
@@ -111,15 +120,15 @@ LineItemAllocate(
     }
     else
     {
-        points     = NULL;
+        points = NULL;
         pointTypes = NULL;
     }
 
-    item->Points     = points;
+    item->Points = points;
     item->PointTypes = pointTypes;
     item->PointCount = PointCount;
-    item->Type       = Type;
-    item->ClosePath  = ClosePath;
+    item->Type = Type;
+    item->ClosePath = ClosePath;
 
     return item;
 }
@@ -127,29 +136,24 @@ LineItemAllocate(
 /* -------------------------------------------------------------
    LineItemInitWithPoints
    ------------------------------------------------------------- */
-_Check_return_
-_Ret_maybenull_
-BOOL
-GR_CALL
-LineItemInitWithPoints(
-    _Inout_ PSLineItem Item,
-    _In_reads_(PointCount * 2) PCFLOAT Points,
-    _In_reads_(PointCount) PCLINE_POINT_TYPE PointTypes,
-    _In_ UINT               PointCount,
-    _In_ LINE_ITEM_TYPE     Type,
-    _In_ BOOL               ClosePath
-    )
+_Check_return_ _Ret_maybenull_ BOOL GR_CALL
+LineItemInitWithPoints(_Inout_ PSLineItem Item,
+                       _In_reads_(PointCount * 2) PCFLOAT Points,
+                       _In_reads_(PointCount) PCLINE_POINT_TYPE PointTypes,
+                       _In_ UINT PointCount,
+                       _In_ LINE_ITEM_TYPE Type,
+                       _In_ BOOL ClosePath)
 {
     if (Item == NULL)
     {
         return FALSE;
     }
 
-    Item->Points     = (PFLOAT)Points;
+    Item->Points = (PFLOAT)Points;
     Item->PointTypes = (PLINE_POINT_TYPE)PointTypes;
     Item->PointCount = PointCount;
-    Item->Type       = Type;
-    Item->ClosePath  = ClosePath;
+    Item->Type = Type;
+    Item->ClosePath = ClosePath;
 
     return TRUE;
 }
@@ -161,7 +165,7 @@ VOID
 GR_CALL
 LineItemFree(
     _In_ PSLineItem Item
-    )
+)
 {
     if (Item != NULL)
     {
@@ -176,7 +180,7 @@ VOID
 GR_CALL
 LineItemFreeWithPoints(
     _In_ PSLineItem Item
-    )
+)
 {
     if (Item != NULL)
     {

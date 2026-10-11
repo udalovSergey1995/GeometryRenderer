@@ -1,10 +1,7 @@
 #include "StdAfx.h"
 
-void main(void)
+void
+main(void)
 {
-	return;
+    return;
 }
-
-
-
-

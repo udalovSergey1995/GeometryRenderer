@@ -4,9 +4,12 @@
    Все контуры обрабатываются вместе по Winding в координатах вывода. */
 typedef struct _RasterSlab
 {
-    FLOAT Y, Height;
-    FLOAT XLeftTop, XLeftBottom;
-    FLOAT XRightTop, XRightBottom;
+    FLOAT Y;
+    FLOAT Height;
+    FLOAT XLeftTop;
+    FLOAT XLeftBottom;
+    FLOAT XRightTop;
+    FLOAT XRightBottom;
 } SRasterSlab, *PSRasterSlab;
 
 typedef struct _RasterSlabItem
@@ -15,12 +18,43 @@ typedef struct _RasterSlabItem
     UINT Count;
 } SRasterSlabItem, *PSRasterSlabItem;
 
-PSRasterSlabItem GR_CALL RasterSlabItemCreate(PSLineItem Line);
+_Check_return_
+_Ret_maybenull_
+PSRasterSlabItem
+GR_CALL
+RasterSlabItemCreate(
+    _In_ PSLineItem Line
+);
 /* Буфер BGRA32 с premultiplied alpha, положительный Stride, цвет ARGB. */
-BOOL GR_CALL RasterSlabItemDraw(PSRasterSlabItem Item, PBYTE Pixels,
-    INT Width, INT Height, INT Stride, UINT Color);
-VOID GR_CALL RasterSlabItemFree(PVOID Data);
-BOOL GR_CALL RasterSlabItemGetProperty(PSPathStageEntry Entry, EStageProps Property,
-    PVOID Output, PINT Length);
+BOOL
+GR_CALL
+RasterSlabItemDraw(
+    _In_ PSRasterSlabItem Item,
+    _Inout_ PBYTE Pixels,
+    _In_ INT Width,
+    _In_ INT Height,
+    _In_ INT Stride,
+    _In_ UINT Color
+);
+VOID
+GR_CALL
+RasterSlabItemFree(
+    _In_opt_ PVOID Data
+);
+BOOL
+GR_CALL
+RasterSlabItemGetProperty(
+    _In_ PSPathStageEntry Entry,
+    _In_ EStageProps Property,
+    _Maybenull_ PVOID Output,
+    _Out_ PINT Length
+);
 /* Площадь пересечения с единичным пикселем [X,X+1] x [Y,Y+1]. */
-GR_EXPORT FLOAT GR_CALL RasterSlabGetCoverage(PSPathStageEntry Entry, FLOAT X, FLOAT Y);
+GR_EXPORT
+FLOAT
+GR_CALL
+RasterSlabGetCoverage(
+    _In_ PSPathStageEntry Entry,
+    _In_ FLOAT X,
+    _In_ FLOAT Y
+);
