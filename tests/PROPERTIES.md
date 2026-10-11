@@ -19,7 +19,11 @@ Current handlers:
 The exported `GetObjectProperty` API and property IDs are unchanged. Returns
 `TRUE` (1) on success and `FALSE` (0) on failure. First query with `pOutData == NULL`
 to obtain the size in bytes, then allocate a sufficient buffer and query again.
-`pOutLen` remains an output parameter; it does not enforce buffer capacity.
+For exported `GetObjectProperty`, `pOutLen` is now input/output: set it to the
+destination capacity before a copy. An undersized buffer fails without writing
+and returns the required byte count. A NULL destination remains a size query.
+Item callbacks and the internal `CopyObjectProperty` helper retain their
+output-size contract and are invoked behind this capacity check.
 Unknown properties return failure and a zero length. Empty arrays return success
 with a zero length. Property copies do not allocate temporary native memory.
 
@@ -36,3 +40,14 @@ tolerance. Output uses `float`, so coordinate rounding limits precision.
 Creation fails instead of relaxing the requested tolerance above 65,536 segments
 per arc or 1,048,576 points per result. Geometry tests check Winding coverage,
 joins, caps, reversals, short segments, intersections and actual chord deviation.
+
+Managed stages returned by `PipeLineObject` retain their owner. The owner uses
+SafeHandle and serializes reads, mutations and Dispose. Reading a stage after
+explicit owner disposal throws ObjectDisposedException. Raw IntPtr constructors
+and pointers obtained through GetNativeObject require external lifetime control;
+they cannot make an arbitrary native pointer safe.
+
+Reliability tests additionally exercise Bezier loops, Close flags, exact dash
+boundaries, large offsets, guarded property buffers and injected realloc failures.
+Zero, negative, nonfinite and <=0.0001 dash lengths are rejected; offset must be
+finite. Bezier flattening propagates allocation/depth-limit failure atomically.

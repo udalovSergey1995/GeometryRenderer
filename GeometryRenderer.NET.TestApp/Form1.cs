@@ -36,7 +36,91 @@ namespace GeometryRenderer.NET.TestApp
 
         private void Form1_Paint(object? sender, PaintEventArgs e)
         {
-            DrawSlabRenderingTest(e.Graphics);
+            DrawLoopRenderingTest(e.Graphics);
+        }
+
+        private void DrawLoopRenderingTest(Graphics graphics)
+        {
+            int width = ClientSize.Width, height = ClientSize.Height;
+            if (width <= 0 || height <= 0) return;
+            int stride = checked(width * 4);
+            var pixels = new byte[checked(stride * height)];
+            for (int i = 0; i < pixels.Length; i += 4)
+            {
+                pixels[i] = 36; pixels[i + 1] = 27; pixels[i + 2] = 22; pixels[i + 3] = 255;
+            }
+            float unit = Math.Min(width, height);
+            float cellWidth = width * 0.27f, cellHeight = height * 0.28f;
+            string[] labels = { "Петля: начало = конец", "Восьмёрка / пунктир", "Спираль / Round",
+                "Змейка / Square", "Развороты / Miter", "Два подпути с Close" };
+            Color[] colors = { Color.Coral, Color.DeepSkyBlue, Color.MediumSpringGreen,
+                Color.Orchid, Color.Gold, Color.LightSkyBlue };
+
+            void Draw(int cell, float[] coordinates, bool bezier, bool closed,
+                ThickLineJoin join, ThickLineCap cap, bool dashed = false, byte[]? customTypes = null)
+            {
+                float left = width * (0.045f + cell % 3 * 0.32f);
+                float top = height * (0.19f + cell / 3 * 0.40f);
+                var points = new float[coordinates.Length];
+                var types = customTypes ?? new byte[coordinates.Length / 2];
+                for (int i = 0; i < coordinates.Length; i += 2)
+                {
+                    points[i] = left + coordinates[i] * cellWidth;
+                    points[i + 1] = top + coordinates[i + 1] * cellHeight;
+                    if (customTypes == null)
+                    {
+                        int index = i / 2;
+                        types[index] = index == 0 ? (byte)0 : bezier && index % 3 != 0 ? (byte)3 : (byte)1;
+                    }
+                }
+                if (closed) types[types.Length - 1] |= 0x80;
+                using var pipeline = new PipeLineObject();
+                pipeline.AddPath(points, types);
+                pipeline.FlettenizePath();
+                if (dashed) pipeline.SetDashPatten(new[] { unit * 0.028f, unit * 0.012f });
+                pipeline.SetThickLine(unit * 0.018f, join, cap, 4, unit * 0.0002f);
+                pipeline.DrawSlabs(pixels, width, height, stride, Color.FromArgb(220, colors[cell]));
+            }
+
+            // Одна кубическая Безье с совпадающими концами: раньше такая петля исчезала.
+            Draw(0, new[] { .5f, .85f, -.15f, -.15f, 1.15f, -.15f, .5f, .85f },
+                true, true, ThickLineJoin.Round, ThickLineCap.Round);
+            Draw(1, new[] { .5f, .5f, -.1f, -.05f, -.1f, 1.05f, .5f, .5f,
+                1.1f, -.05f, 1.1f, 1.05f, .5f, .5f },
+                true, true, ThickLineJoin.Bevel, ThickLineCap.Flat, true);
+            Draw(2, new[] { .05f, .7f, -.05f, -.1f, 1.15f, -.1f, .85f, .65f,
+                .65f, 1.15f, .1f, .95f, .25f, .5f, .4f, .1f, .8f, .4f, .55f, .65f },
+                true, false, ThickLineJoin.Round, ThickLineCap.Round);
+            Draw(3, new[] { .08f, .1f, .95f, -.1f, .95f, .3f, .2f, .3f,
+                -.1f, .3f, -.1f, .6f, .8f, .6f, 1.1f, .6f, 1.1f, .9f, .15f, .9f },
+                true, false, ThickLineJoin.Bevel, ThickLineCap.Square);
+            Draw(4, new[] { .1f, .15f, .9f, .15f, .15f, .22f, .9f, .32f,
+                .2f, .45f, .85f, .85f, .35f, .65f },
+                false, false, ThickLineJoin.Miter, ThickLineCap.Flat);
+            Draw(5, new[] { .32f, .8f, -.1f, -.05f, .75f, -.05f, .32f, .8f,
+                .68f, .85f, .25f, .05f, 1.1f, .05f, .68f, .85f },
+                true, false, ThickLineJoin.Round, ThickLineCap.Round, false,
+                new byte[] { 0, 3, 3, 0x81, 0, 3, 3, 0x81 });
+
+            using var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            var data = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            try
+            {
+                for (int y = 0; y < height; y++)
+                    System.Runtime.InteropServices.Marshal.Copy(pixels, y * stride,
+                        IntPtr.Add(data.Scan0, y * data.Stride), stride);
+            }
+            finally { bitmap.UnlockBits(data); }
+            graphics.DrawImageUnscaled(bitmap, 0, 0);
+            using var font = new Font("Segoe UI", unit * 0.024f, FontStyle.Regular, GraphicsUnit.Pixel);
+            using var brush = new SolidBrush(Color.White);
+            using var format = new StringFormat { Alignment = StringAlignment.Center };
+            graphics.DrawString("Безье · петли · пересечения · native slabs", font, brush,
+                new PointF(width * .5f, height * .035f), format);
+            for (int cell = 0; cell < labels.Length; cell++)
+                graphics.DrawString(labels[cell], font, brush,
+                    new PointF(width * (.18f + cell % 3 * .32f), height * (.13f + cell / 3 * .40f)), format);
         }
 
         private void DrawSlabRenderingTest(Graphics graphics)

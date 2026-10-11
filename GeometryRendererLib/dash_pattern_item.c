@@ -254,17 +254,9 @@ DashPatternNormalizeOffset(
         return 0.0f;
     }
 
-    result = Offset;
-
-    while (result < 0.0f)
-    {
-        result += TotalLength;
-    }
-
-    while (result >= TotalLength)
-    {
-        result -= TotalLength;
-    }
+    result = fmodf(Offset, TotalLength);
+    if (result < 0) result += TotalLength;
+    if (result >= TotalLength) result = 0;
 
     return result;
 }
@@ -478,6 +470,8 @@ DashPatternSplitSegment(
 
     if (remainInDash <= DASH_PATTERN_EPSILON)
     {
+        *pSegmentIndex = (segIdx + 1) % DashCount;
+        if ((segIdx % 2) == 0) Buffer->NeedsMove = TRUE;
         *pSegmentRemain = 0.0f;
     }
     else
@@ -602,10 +596,13 @@ DashPatternBuildDashedLine(
     }
 
     totalLen = DashPatternTotalLength(DashLengths, DashCount);
-    if (totalLen <= DASH_PATTERN_EPSILON)
+    if (!isfinite(DashOffset) || !isfinite(totalLen) || totalLen <= DASH_PATTERN_EPSILON)
     {
         return NULL;
     }
+
+    for (i = 0; i < DashCount; ++i)
+        if (!isfinite(DashLengths[i]) || DashLengths[i] <= DASH_PATTERN_EPSILON) return NULL;
 
     normOffset = DashPatternNormalizeOffset(DashOffset, totalLen);
     DashPatternLocateOffset(DashLengths, DashCount, normOffset, &segIdx, &segRemain);

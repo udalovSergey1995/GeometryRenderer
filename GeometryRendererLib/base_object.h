@@ -31,4 +31,4 @@ _Check_return_ GR_EXPORT INT GR_CALL
 GetObjectProperty(_In_ PVOID pObject,
                   _In_ INT eProp,
                   _Maybenull_ PVOID pOutData,
-                  _Out_ PINT pOutLen);
+                  _Inout_ PINT pOutLen);

@@ -126,7 +126,7 @@ static void TestCustomStageAndErrors(void)
         "custom size query routed");
     CHECK(GetObjectProperty(PathStagesGetLastStage(&stages), 1000, &output, &length) && output == value,
         "custom value query routed");
-    CHECK(customCalls == 2, "custom callback actually called");
+    CHECK(customCalls == 3, "custom callback: size query plus checked copy");
     PathStagesUninitialize(&stages);
 
     CHECK(!GetObjectProperty(NULL, ESP_TYPE, NULL, &length) && length == 0, "null object");

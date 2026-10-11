@@ -19,6 +19,10 @@ cl /nologo /W4 /TC /I "%GR_TEST_INCLUDE%" "%GR_TEST_ROOT%\tests\stage_property_t
 if errorlevel 1 goto failed
 stage_property_tests.exe
 if errorlevel 1 goto failed
+cl /nologo /W4 /TC /I "%GR_TEST_INCLUDE%" "%GR_TEST_ROOT%\tests\reliability_tests.c" /Fe:reliability_tests.exe /link property_test_core.lib
+if errorlevel 1 goto failed
+reliability_tests.exe
+if errorlevel 1 goto failed
 cl /nologo /W4 /TC /I "%GR_TEST_INCLUDE%" "%GR_TEST_ROOT%\tests\thick_geometry_tests.c" /Fe:thick_geometry_tests.exe /link property_test_core.lib
 if errorlevel 1 goto failed
 thick_geometry_tests.exe

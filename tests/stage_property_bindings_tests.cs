@@ -5,6 +5,13 @@ using GeometryRenderer.NET.Bindings.Types;
 
 internal static class StagePropertyBindingsTests
 {
+    private static PipeLogicalLineStage DetachedStage(out WeakReference owner)
+    {
+        var pipeline = new PipeLineObject();
+        pipeline.AddLinePath(new float[] { 0, 0, 1, 1 }, new byte[] { 0, 1 });
+        owner = new WeakReference(pipeline);
+        return (PipeLogicalLineStage)pipeline.CurrentStage;
+    }
     private static void Check(bool condition, string name)
     {
         if (!condition) throw new Exception(name);
@@ -70,6 +77,47 @@ internal static class StagePropertyBindingsTests
                 Check(Math.Abs(stage.GetCoverage(0, 0) - 0.2f) < 0.00001f, "Analytic slab coverage");
             }
             Console.WriteLine("Raster slab C# tests: PASS");
+            {
+                var pipeline = new PipeLineObject();
+                pipeline.AddLinePath(new float[] { 0, 0, 1, 1 }, new byte[] { 0, 1 });
+                var stage = (PipeLogicalLineStage)pipeline.CurrentStage;
+                bool failed = false;
+                try { BaseNativeObject.GetObjectPropertyStruct<int>(stage.GetNativeObject(), 6); }
+                catch (InvalidOperationException) { failed = true; }
+                Check(failed, "Wrong property structure size rejected before copy");
+                pipeline.Dispose();
+                pipeline.Dispose();
+                failed = false;
+                try { var ignored = stage.Path; }
+                catch (ObjectDisposedException) { failed = true; }
+                Check(failed, "Stage access after owner Dispose is safe");
+                failed = false;
+                try { pipeline.FlettenizePath(); }
+                catch (ObjectDisposedException) { failed = true; }
+                Check(failed, "Pipeline use after Dispose is safe");
+            }
+            {
+                WeakReference owner;
+                var stage = DetachedStage(out owner);
+                GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+                Check(owner.IsAlive && stage.PathLen == 2, "Stage keeps owner alive through GC");
+                ((PipeLineObject)owner.Target).Dispose();
+            }
+            {
+                var pipeline = new PipeLineObject();
+                pipeline.AddLinePath(new float[] { 0, 0, 1, 1 }, new byte[] { 0, 1 });
+                var stage = (PipeLogicalLineStage)pipeline.CurrentStage;
+                var reader = System.Threading.Tasks.Task.Factory.StartNew(() =>
+                {
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        try { Check(stage.PathLen == 2, "Concurrent property read"); }
+                        catch (ObjectDisposedException) { break; }
+                    }
+                });
+                pipeline.Dispose();
+                reader.Wait();
+            }
             using (var pipeline = new PipeLineObject())
             {
                 pipeline.AddLinePath(new float[] { 0, .1f, 2, .1f, 2, .3f, 0, .3f }, new byte[] { 0, 1, 1, 0x81 });

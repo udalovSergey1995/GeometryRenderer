@@ -137,7 +137,7 @@ FlattenBufferAppendPoint(
    Рекурсивное деление кубической Безье (de Casteljau)
    ------------------------------------------------------------- */
 static
-VOID
+BOOL
 GR_CALL
 FlattenBezierRecursive(
     _In_ FLOAT P0x,
@@ -153,13 +153,6 @@ FlattenBezierRecursive(
     _Inout_ PFLATTEN_BUFFER Buffer
 )
 {
-    FLOAT dx;
-    FLOAT dy;
-    FLOAT lenSq;
-    FLOAT cross1;
-    FLOAT cross2;
-    FLOAT distSqMax;
-
     FLOAT m0x;
     FLOAT m0y;
     FLOAT m1x;
@@ -173,29 +166,32 @@ FlattenBezierRecursive(
     FLOAT m5x;
     FLOAT m5y;
 
-    dx = P3x - P0x;
-    dy = P3y - P0y;
-    lenSq = dx * dx + dy * dy;
-
-    cross1 = (P1x - P0x) * dy - (P1y - P0y) * dx;
-    cross2 = (P2x - P0x) * dy - (P2y - P0y) * dx;
-
-    if (cross1 < 0.0f)
+    /* Оцениваем расстояние контролей до ОТРЕЗКА, а не бесконечной прямой.
+       Это сохраняет петли и коллинеарные кривые с выходом за концы хорды. */
     {
-        cross1 = -cross1;
+        double maxDistance = 0;
+        double chordX = (double)P3x - P0x;
+        double chordY = (double)P3y - P0y;
+        double chordSq = chordX * chordX + chordY * chordY;
+        double controls[4] = { P1x, P1y, P2x, P2y };
+        UINT i;
+        for (i = 0; i < 2; ++i)
+        {
+            double x = controls[i * 2] - P0x;
+            double y = controls[i * 2 + 1] - P0y;
+            double t = chordSq > 0 ? (x * chordX + y * chordY) / chordSq : 0;
+            double distance;
+            t = fmax(0, fmin(1, t));
+            distance = (x - t * chordX) * (x - t * chordX) + (y - t * chordY) * (y - t * chordY);
+            if (distance > maxDistance) maxDistance = distance;
+        }
+        if (maxDistance <= (double)Flatness * Flatness)
+            return FlattenBufferAppendPoint(Buffer, P3x, P3y, LinePointType_Line);
     }
-    if (cross2 < 0.0f)
+    /* Не возвращаем успех с заведомо неполной/неточной геометрией. */
+    if (Depth >= FLATTEN_MAX_DEPTH)
     {
-        cross2 = -cross2;
-    }
-
-    distSqMax = cross1 > cross2 ? cross1 : cross2;
-    distSqMax = distSqMax * distSqMax;
-
-    if (Depth >= FLATTEN_MAX_DEPTH || lenSq == 0.0f || distSqMax <= Flatness * Flatness * lenSq)
-    {
-        FlattenBufferAppendPoint(Buffer, P3x, P3y, LinePointType_Line);
-        return;
+        return FALSE;
     }
 
     m0x = (P0x + P1x) * 0.5f;
@@ -213,8 +209,8 @@ FlattenBezierRecursive(
     m5x = (m3x + m4x) * 0.5f;
     m5y = (m3y + m4y) * 0.5f;
 
-    FlattenBezierRecursive(P0x, P0y, m0x, m0y, m3x, m3y, m5x, m5y, Flatness, Depth + 1, Buffer);
-    FlattenBezierRecursive(m5x, m5y, m4x, m4y, m2x, m2y, P3x, P3y, Flatness, Depth + 1, Buffer);
+    return FlattenBezierRecursive(P0x, P0y, m0x, m0y, m3x, m3y, m5x, m5y, Flatness, Depth + 1, Buffer)
+        && FlattenBezierRecursive(m5x, m5y, m4x, m4y, m2x, m2y, P3x, P3y, Flatness, Depth + 1, Buffer);
 }
 
 /* -------------------------------------------------------------
@@ -227,7 +223,8 @@ FlattenItemInitEx(_In_ PSLineItem LineItem, _In_ FLOAT Flatness)
     PSLineItem result;
     UINT i;
 
-    if (LineItem == NULL)
+    if (LineItem == NULL || !isfinite(Flatness) || Flatness <= 0 ||
+        (LineItem->PointCount && (!LineItem->Points || !LineItem->PointTypes)))
     {
         return NULL;
     }
@@ -256,7 +253,7 @@ FlattenItemInitEx(_In_ PSLineItem LineItem, _In_ FLOAT Flatness)
     {
         BOOL fIsClose = IS_CLOSE_POINT(LineItem->PointTypes[i]);
 
-        switch (LineItem->PointTypes[i])
+        switch (GET_POINT_TYPE(LineItem->PointTypes[i]))
         {
         case LinePointType_Move:
         {
@@ -305,7 +302,7 @@ FlattenItemInitEx(_In_ PSLineItem LineItem, _In_ FLOAT Flatness)
                 break;
             }
 
-            if (LineItem->PointTypes[i + 1] != LinePointType_BezierControl)
+            if (GET_POINT_TYPE(LineItem->PointTypes[i + 1]) != LinePointType_BezierControl)
             {
                 if (!FlattenBufferAppendPoint(&buffer,
                                               LineItem->Points[i * 2],
@@ -329,7 +326,11 @@ FlattenItemInitEx(_In_ PSLineItem LineItem, _In_ FLOAT Flatness)
 
             UINT countBefore = buffer.Count;
 
-            FlattenBezierRecursive(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, Flatness, 0, &buffer);
+            if (!FlattenBezierRecursive(p0x, p0y, p1x, p1y, p2x, p2y, p3x, p3y, Flatness, 0, &buffer))
+            {
+                FlattenBufferUninit(&buffer);
+                return NULL;
+            }
 
             // Если исходная конечная точка имела Close — ставим его на последнюю сгенерированную
             if (IS_CLOSE_POINT(LineItem->PointTypes[i + 2]))
