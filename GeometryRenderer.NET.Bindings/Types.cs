@@ -126,6 +126,12 @@ namespace GeometryRenderer.NET.Bindings.Types
 
     public class PipeThickLineStage : PipeLogicalLineStage
     {
+        /// <summary>Допуск дуг в единицах координат пути.</summary>
+        public float ArcTolerance
+            => BaseNativeObject.GetObjectPropertyFloat(
+                    base._nativeObject,
+                    (int)PathStagesEntryProps.ArcTolerance);
+
         public float Thickness
             => BaseNativeObject.GetObjectPropertyFloat(
                     base._nativeObject,
@@ -333,22 +339,29 @@ namespace GeometryRenderer.NET.Bindings.Types
                          ThickLineCap cap = ThickLineCap.Flat,
                          float miterLimit = 10.0f)
         {
+            SetThickLine(thickness, join, cap, miterLimit, 0.1f);
+        }
+
+        public void SetThickLine(float thickness, ThickLineJoin join,
+                         ThickLineCap cap, float miterLimit, float arcTolerance)
+        {
             if (CurrentStage.StageType != EPathStageType.PathStageTypeDashPattern
                 && CurrentStage.StageType != EPathStageType.PathStageTypeApproximated)
             {
                 throw new Exception("Текущее состояние пайплайна недопускает данную операцию");
             }
 
-            int result = Native.PathPipeLineApplyThickLine(
+            int result = Native.PathPipeLineApplyThickLineEx(
                 _nativeObject,
                 thickness,
                 (int)join,
                 (int)cap,
-                miterLimit);
+                miterLimit,
+                arcTolerance);
 
             if (result != 1)
             {
-                throw new Exception("Ошибка применения толщины");
+                throw new Exception("Ошибка построения обводки: некорректные параметры, нехватка памяти или превышение лимитов геометрии");
             }
         }
 

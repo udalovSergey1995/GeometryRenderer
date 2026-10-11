@@ -90,3 +90,16 @@ PathPipeLineApplyThickLine(
 	_In_ THICK_LINE_CAP     CapStyle,
 	_In_ FLOAT              MiterLimit
 );
+
+/* Допуск дуг в единицах координат пути. FALSE при ошибке или превышении лимитов. */
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineApplyThickLineEx(
+    _In_ PSPathPipeLine pPipeline,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
+);

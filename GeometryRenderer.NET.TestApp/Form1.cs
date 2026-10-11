@@ -111,8 +111,6 @@ namespace GeometryRenderer.NET.TestApp
                 }
 
 
-
-
                 var wPts = GetPts(pts);
 
                 var gp = new GraphicsPath(wPts, flags);

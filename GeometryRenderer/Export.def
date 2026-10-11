@@ -9,6 +9,7 @@ EXPORTS
 	PathPipeLineFlattenizeLogicalLine
 	PathPipeLineApplyDashPattern
 	PathPipeLineApplyThickLine
+	PathPipeLineApplyThickLineEx
 
 	PathPipeEnumPathstages
 	PathPipeLineGetLastStage

@@ -42,6 +42,8 @@ typedef enum _EStageProps
 
         ESP_MITER_LIMIT,
 
+        ESP_ARC_TOLERANCE,
+
     ESP_THICK_LINE_END
 } EStageProps;
 

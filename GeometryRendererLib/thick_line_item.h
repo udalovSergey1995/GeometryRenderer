@@ -5,6 +5,10 @@
    ------------------------------------------------------------- */
 #define THICK_LINE_DEFAULT_THICKNESS    1.0f
 #define THICK_LINE_DEFAULT_MITER_LIMIT  10.0f
+#define THICK_LINE_DEFAULT_ARC_TOLERANCE 0.1f
+/* Превышение лимита означает отказ без снижения заданной точности. */
+#define THICK_LINE_MAX_ARC_SEGMENTS     65536u
+#define THICK_LINE_MAX_POINTS           1048576u
 
    /* -------------------------------------------------------------
       Стили соединений (Join)
@@ -39,6 +43,7 @@ typedef struct _ThickLineItem
     FLOAT               MiterLimit;
 
     PSLineItem          ThickGeometry;   // результат (обычно замкнутый контур)
+    FLOAT               ArcTolerance;    // допуск дуг в единицах координат пути
 } SThickLineItem, * PSThickLineItem;
 
 BOOL
@@ -79,6 +84,33 @@ ThickLineItemInitFromFlatten(
     _In_ THICK_LINE_JOIN    JoinStyle,
     _In_ THICK_LINE_CAP     CapStyle,
     _In_ FLOAT              MiterLimit
+);
+
+/* Контуры предназначены для Winding. NULL при ошибке или превышении лимитов. */
+_Check_return_
+_Ret_maybenull_
+PSThickLineItem
+GR_CALL
+ThickLineItemInitEx(
+    _In_ PSLineItem LineItem,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
+);
+
+_Check_return_
+_Ret_maybenull_
+PSThickLineItem
+GR_CALL
+ThickLineItemInitFromFlattenEx(
+    _In_ PSLineItem FlattenLineItem,
+    _In_ FLOAT Thickness,
+    _In_ THICK_LINE_JOIN JoinStyle,
+    _In_ THICK_LINE_CAP CapStyle,
+    _In_ FLOAT MiterLimit,
+    _In_ FLOAT ArcTolerance
 );
 
 /* -------------------------------------------------------------

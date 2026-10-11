@@ -101,5 +101,12 @@ namespace GeometryRenderer.NET.Bindings
             int join,
             int cap,
             float miterLimit);
+        [DllImport(
+            NtivePinvokeDefs.GeometryRendererDll,
+            CallingConvention = CallingConvention.StdCall,
+            EntryPoint = "PathPipeLineApplyThickLineEx")]
+        public static extern int PathPipeLineApplyThickLineEx(
+            IntPtr pPipeLine, float thickness, int join, int cap,
+            float miterLimit, float arcTolerance);
     }
 }

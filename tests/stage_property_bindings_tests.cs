@@ -28,6 +28,7 @@ internal static class StagePropertyBindingsTests
                 Check(thick != null, "Thick stage type");
                 Check(thick.Thickness == 4, "Thickness");
                 Check(thick.MiterLimit == 3.5f, "MiterLimit");
+                Check(thick.ArcTolerance == 0.1f, "Legacy ArcTolerance");
                 Check(thick.JoinStyle == (int)ThickLineJoin.Bevel, "JoinStyle");
                 Check(thick.CapStyle == (int)ThickLineCap.Flat, "CapStyle");
                 Check(BaseNativeObject.GetObjectPropertyStruct<float>(thick.GetNativeObject(), 14) == 4,
@@ -43,6 +44,20 @@ internal static class StagePropertyBindingsTests
                     Check(!stage.IsClosed, "IsClosed metadata");
                 }
                 Check(stages[0].PathLen == 2 && stages[1].PathLen == 2, "Source path length");
+            }
+            using (var pipeline = new PipeLineObject())
+            {
+                pipeline.AddLinePath(new float[] { 0, 0, 10, 0 }, new byte[] { 0, 1 });
+                pipeline.FlettenizePath();
+                int count = pipeline.EntriesCount;
+                bool failed = false;
+                try { pipeline.SetThickLine(4, ThickLineJoin.Round, ThickLineCap.Round, 10, 0); }
+                catch (Exception) { failed = true; }
+                Check(failed && pipeline.EntriesCount == count, "Invalid tolerance leaves pipeline intact");
+                pipeline.SetThickLine(4, ThickLineJoin.Round, ThickLineCap.Round, 10, 0.025f);
+                var thick = (PipeThickLineStage)pipeline.CurrentStage;
+                Check(thick.ArcTolerance == 0.025f, "Explicit tolerance via item callback");
+                Check(thick.Path.Length == thick.PathLen, "Explicit tolerance geometry");
             }
             Console.WriteLine("Stage property C# tests: PASS");
             return 0;

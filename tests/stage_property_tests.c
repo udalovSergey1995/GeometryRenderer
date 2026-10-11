@@ -93,6 +93,8 @@ static void TestPipeline(void)
         CheckValue(entry, ESP_JOIN_STYLE, &thick->JoinStyle, sizeof(thick->JoinStyle));
         CheckValue(entry, ESP_CAP_STYLE, &thick->CapStyle, sizeof(thick->CapStyle));
         CheckValue(entry, ESP_MITER_LIMIT, &thick->MiterLimit, sizeof(thick->MiterLimit));
+        CheckValue(entry, ESP_ARC_TOLERANCE, &thick->ArcTolerance, sizeof(thick->ArcTolerance));
+        CHECK(thick->ArcTolerance == THICK_LINE_DEFAULT_ARC_TOLERANCE, "legacy tolerance");
     }
     CHECK(pipeline->m_sPathStages.Count == 4, "pipeline stage count preserved");
     PathPipeLineDestroy(pipeline);

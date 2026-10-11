@@ -27,3 +27,12 @@ The tests exercise all four stages, scalar and array properties, size queries,
 Bezier metadata, empty geometry, errors, and a custom stage callback without
 adding a central type switch. C# tests exercise the rebuilt DLL. `DashOffset`
 is now a `float`, matching the native property (callers expecting `int` must adapt).
+
+`ArcTolerance` is owned by the thick item and read through its property callback.
+It controls chord deviation for round joins/caps in path coordinate units;
+it does not change Bezier flattening tolerance. Legacy creation uses `0.1`.
+The `Ex` native calls and the five-argument C# `SetThickLine` accept an explicit
+tolerance. Output uses `float`, so coordinate rounding limits precision.
+Creation fails instead of relaxing the requested tolerance above 65,536 segments
+per arc or 1,048,576 points per result. Geometry tests check Winding coverage,
+joins, caps, reversals, short segments, intersections and actual chord deviation.

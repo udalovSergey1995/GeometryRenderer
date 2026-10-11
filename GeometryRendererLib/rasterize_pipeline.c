@@ -267,6 +267,17 @@ PathPipeLineApplyThickLine(
 	_In_ FLOAT              MiterLimit
 )
 {
+    return PathPipeLineApplyThickLineEx(pPipeline, Thickness, JoinStyle, CapStyle,
+        MiterLimit, THICK_LINE_DEFAULT_ARC_TOLERANCE);
+}
+
+GR_EXPORT
+BOOL
+GR_CALL
+PathPipeLineApplyThickLineEx(
+    PSPathPipeLine pPipeline, FLOAT Thickness, THICK_LINE_JOIN JoinStyle,
+    THICK_LINE_CAP CapStyle, FLOAT MiterLimit, FLOAT ArcTolerance)
+{
 	PSPathStageEntry pCurrentItem;
 	PSThickLineItem  pThickItem;
 	PSLineItem       pSourceLine;
@@ -310,21 +321,21 @@ PathPipeLineApplyThickLine(
 	if (pCurrentItem->StageType == PathStageTypeLogicalCurve)
 	{
 		// На всякий случай можно проверить отсутствие Безье
-		pThickItem = ThickLineItemInit(
+		pThickItem = ThickLineItemInitEx(
 			pSourceLine,
 			Thickness,
 			JoinStyle,
 			CapStyle,
-			MiterLimit);
+			MiterLimit, ArcTolerance);
 	}
 	else
 	{
-		pThickItem = ThickLineItemInitFromFlatten(
+		pThickItem = ThickLineItemInitFromFlattenEx(
 			pSourceLine,
 			Thickness,
 			JoinStyle,
 			CapStyle,
-			MiterLimit);
+			MiterLimit, ArcTolerance);
 	}
 
 	if (!pThickItem)

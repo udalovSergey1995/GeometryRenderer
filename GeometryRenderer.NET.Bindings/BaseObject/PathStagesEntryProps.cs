@@ -31,6 +31,8 @@
 
             CapStyle,
 
-            MiterLimit
+            MiterLimit,
+
+            ArcTolerance
     }
 }
