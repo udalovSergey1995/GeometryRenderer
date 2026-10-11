@@ -217,6 +217,48 @@ PathStagesClear(
  *  Доступ к этапам
  *===========================================================================*/
 
+BOOL
+GR_CALL
+PathStagesRollbackTo(
+    _Inout_ PSPathStages PathStages,
+    _In_opt_ PSPathStageEntry Checkpoint
+)
+{
+    PSPathStageEntry entry;
+    BOOL found = Checkpoint == NULL;
+
+    if (PathStages == NULL)
+    {
+        return FALSE;
+    }
+
+    /* Проверяем принадлежность до удаления: чужой checkpoint не должен
+       привести к очистке корректного списка. Сам указатель не разыменовываем. */
+    if (Checkpoint != NULL)
+    {
+        PATH_STAGES_FOREACH(PathStages, entry)
+        {
+            if (entry == Checkpoint)
+            {
+                found = TRUE;
+                break;
+            }
+        }
+    }
+    if (!found)
+    {
+        return FALSE;
+    }
+
+    /* Удаляем в обратном порядке создания. RemoveStage вызывает FreeCallback
+       айтема, освобождает запись и обновляет Count/двусвязный список. */
+    while ((entry = PathStagesGetLastStage(PathStages)) != Checkpoint)
+    {
+        PathStagesRemoveStage(PathStages, entry);
+    }
+    return TRUE;
+}
+
 _Ret_maybenull_ _Post_writable_byte_size_(sizeof(SPathStageEntry)) PSPathStageEntry GR_CALL
     PathStagesGetLastStage(_In_ PSPathStages PathStages)
 {

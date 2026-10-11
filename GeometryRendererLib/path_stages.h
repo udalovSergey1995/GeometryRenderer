@@ -142,6 +142,16 @@ PathStagesClear(
     _Inout_ PSPathStages PathStages
 );
 
+/* Откат append-only операции. NULL означает исходно пустой список.
+   Checkpoint должен принадлежать этому контейнеру и оставаться живым. */
+_Check_return_
+BOOL
+GR_CALL
+PathStagesRollbackTo(
+    _Inout_ PSPathStages PathStages,
+    _In_opt_ PSPathStageEntry Checkpoint
+);
+
 _Ret_maybenull_ _Post_writable_byte_size_(sizeof(SPathStageEntry)) PSPathStageEntry GR_CALL
     PathStagesGetLastStage(_In_ PSPathStages PathStages);
 

@@ -46,3 +46,15 @@ Logical Bezier paths are flattened first. Existing RasterSlab stages are reused.
 Coverage is accumulated for a row, clipped to the image, then blended source-over
 once per pixel, including both paint opacity and geometric coverage. Row padding
 is untouched. This function produces pixels; displaying the image is the caller's job.
+
+On a returned failure, DrawSlabs restores the stage list to its original tail.
+Any newly appended approximated/raster stages are removed in reverse order through
+their FreeCallback. Previously existing stages and their addresses are preserved.
+The destination buffer is unchanged on failure: validation and the coverage-buffer
+allocation finish before any pixel writes; the drawing loop has no fallible allocations.
+A retry after failure can reuse the same pipeline.
+
+The native container helper `PathStagesRollbackTo(stages, checkpoint)` supports
+append-only transactions. NULL means an originally empty list. A foreign checkpoint
+is rejected before deletion. The caller must retain the checkpoint and prevent
+concurrent mutations; this helper does not restore modifications to existing items.

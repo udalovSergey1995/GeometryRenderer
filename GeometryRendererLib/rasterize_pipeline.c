@@ -14,6 +14,7 @@ PathPipeLineDrawSlabs(
 )
 {
     PSPathStageEntry entry;
+    PSPathStageEntry checkpoint;
     /* Проверяем ёмкость буфера до изменения пайплайна. uint64_t исключает
        переполнение промежуточных произведений ширины и шага строки. */
     if (!pipeline || !pixels || width <= 0 || height <= 0 || stride <= 0 || bufferLength <= 0 ||
@@ -27,6 +28,7 @@ PathPipeLineDrawSlabs(
     {
         return FALSE;
     }
+    checkpoint = entry;
     /* Исходная кривая сначала преобразуется в отрезки. Уже подготовленные
        этапы не пересчитываем: результат растеризации сохраняется в списке. */
     if (entry->StageType == PathStageTypeLogicalCurve &&
@@ -34,7 +36,7 @@ PathPipeLineDrawSlabs(
     {
         if (!PathPipeLineFlattenizeLogicalLine(pipeline))
         {
-            return FALSE;
+            goto rollback;
         }
         entry = PathStagesGetLastStage(&pipeline->m_sPathStages);
     }
@@ -42,12 +44,24 @@ PathPipeLineDrawSlabs(
     {
         if (!PathPipeLineRasterizeSlabs(pipeline))
         {
-            return FALSE;
+            goto rollback;
         }
         entry = PathStagesGetLastStage(&pipeline->m_sPathStages);
     }
-    return RasterSlabItemDraw(
-        (PSRasterSlabItem)entry->StageData, pixels, width, height, stride, color);
+    /* Draw выделяет coverage до записи пикселей. После начала записи
+       в текущем алгоритме нет возвращающих ошибку действий. */
+    if (!RasterSlabItemDraw(
+            (PSRasterSlabItem)entry->StageData, pixels, width, height, stride, color))
+    {
+        goto rollback;
+    }
+    return TRUE;
+
+rollback:
+    /* Существовавшие этапы только читались. Освобождаем все результаты,
+       добавленные подготовкой; исходные указатели и свойства сохраняются. */
+    (void)PathStagesRollbackTo(&pipeline->m_sPathStages, checkpoint);
+    return FALSE;
 }
 
 GR_EXPORT
