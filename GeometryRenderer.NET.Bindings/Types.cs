@@ -326,37 +326,6 @@ public class PipeLineObject : IDisposable
     }
 
     public void
-    AddPathData(PointF[] points, byte[] ptTypes, bool isBeziere = false, bool isClosed = false)
-    {
-        try
-        {
-            lock (_syncRoot)
-            {
-                EnsureAlive();
-                if (points.Length != ptTypes.Length)
-                    throw new Exception("Not equals array len");
-
-                unsafe
-                {
-                    fixed(PointF *pPoints = points)
-                    {
-                        Native.PathPipeLineAddLogicalLine(_nativeObject,
-                                                          new IntPtr((float *)pPoints),
-                                                          ptTypes,
-                                                          points.Length,
-                                                          isBeziere ? 1 : 0,
-                                                          isClosed ? 1 : 0);
-                    }
-                }
-            }
-        }
-        finally
-        {
-            GC.KeepAlive(this);
-        }
-    }
-
-    public void
     AddPathData(float[] points, byte[] ptTypes, bool isBeziere = false, bool isClosed = false)
     {
         try
