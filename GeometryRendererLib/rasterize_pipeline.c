@@ -74,7 +74,8 @@ PathPipeLineAddLogicalLine(
 		&pPipeline->m_sPathStages,
 		PathStageTypeLogicalCurve,
 		pLineItem,
-		LineItemFreeWithPoints))
+		LineItemFreeWithPoints,
+		LineItemGetProperty))
 	{
 		LineItemFreeWithPoints(pLineItem);
 		return FALSE;
@@ -117,7 +118,8 @@ PathPipeLineFlattenizeLogicalLine(
 		&pPipeline->m_sPathStages,
 		PathStageTypeApproximated,
 		pFlattenLineItem,
-		FlattenItemFree))
+		FlattenItemFree,
+		FlattenItemGetProperty))
 	{
 		FlattenItemFree(pFlattenLineItem);
 		return FALSE;
@@ -195,7 +197,8 @@ PathPipeLineApplyDashPattern(
 		&pPipeline->m_sPathStages,
 		PathStageTypeDashPattern,
 		pDashItem,
-		DashPatternItemFreeCallback))
+		DashPatternItemFreeCallback,
+		DashPatternItemGetProperty))
 	{
 		DashPatternItemFree(pDashItem);
 		return FALSE;
@@ -331,7 +334,8 @@ PathPipeLineApplyThickLine(
 		&pPipeline->m_sPathStages,
 		PathStageTypeThickLine,
 		pThickItem,
-		ThickLineItemFreeCallback))
+		ThickLineItemFreeCallback,
+		ThickLineItemGetProperty))
 	{
 		ThickLineItemFree(pThickItem);
 		return FALSE;

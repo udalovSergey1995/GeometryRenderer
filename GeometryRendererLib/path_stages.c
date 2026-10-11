@@ -1,4 +1,4 @@
-﻿/* path_stages.c — реализация контейнера этапов преобразования пути */
+/* path_stages.c — реализация контейнера этапов преобразования пути */
 
 #include "stdafx.h"
 
@@ -130,13 +130,15 @@ PathStagesAddStage(
     _Inout_ PSPathStages PathStages,
     _In_ EPathStageType StageType,
     _In_ PVOID StageData,
-    _In_opt_ PFN_PATH_STAGE_FREE FreeCallback
+    _In_opt_ PFN_PATH_STAGE_FREE FreeCallback,
+    _In_ GET_PATH_STAGE_PROPERTY GetPropertyCallback
 )
 {
     PSPathStageEntry Entry;
     PSPathStageEntry LastStage;
 
-    if (PathStages == NULL || StageData == NULL || StageType == PathStageTypeInvalid)
+    if (PathStages == NULL || StageData == NULL || StageType == PathStageTypeInvalid ||
+        GetPropertyCallback == NULL)
     {
         return 0;
     }
@@ -159,6 +161,7 @@ PathStagesAddStage(
     Entry->StageType = StageType;
     Entry->StageData = StageData;
     Entry->FreeCallback = FreeCallback;
+    Entry->GetPropertyCallback = GetPropertyCallback;
     Entry->Base.type = EOT_PipeStageEntry;
 
     PathStagesInsertTailList(&PathStages->Head, &Entry->ListEntry);
@@ -299,97 +302,6 @@ PathStagesEnum(
     }
 }
 
-VOID
-GR_CALL
-PathStagesgetPathLen(
-    _In_ PSLineItem pLine
-)
-{
-
-}
-
-VOID 
-GR_CALL
-PathStagesGetPathData(
-    _In_ PSPathStageEntry pEntry,
-    _Maybenull_ PFLOAT * ppPoints,
-    _Maybenull_ PBYTE * ppFlags,
-    _Maybenull_ PINT pDataMemLen,
-    _Maybenull_ PINT pFlagsMemLen
-)
-{
-    ASSERT(pEntry);
-    ASSERT(pEntry->StageData);
-
-    PFLOAT pTmpOutData = NULL;
-    PBYTE pTmpOutFlags = NULL;
-    PSLineItem pLine = NULL;
-
-    switch (pEntry->StageType)
-    {
-        case PathStageTypeDashPattern:
-        {
-            PSDashPatternItem pDash = pEntry->StageData;
-
-            ASSERT(pDash->DashedLine);
-
-            pLine = pDash->DashedLine;
-
-            if (pDataMemLen)
-                (*pDataMemLen) = pLine->PointCount * 2 * sizeof(float);
-
-            if (pFlagsMemLen)
-                (*pFlagsMemLen) = pLine->PointCount;
-
-            pTmpOutData = pLine->Points;
-            pTmpOutFlags = pLine->PointTypes;
-
-            break;
-        }
-        case PathStageTypeThickLine:
-        {
-            PSThickLineItem pThick = (PSThickLineItem)pEntry->StageData;
-
-            ASSERT(pThick && pThick->ThickGeometry);
-
-            pLine = pThick->ThickGeometry;
-
-            if (pDataMemLen)
-                (*pDataMemLen) = pLine->PointCount * 2 * sizeof(float);
-
-            if (pFlagsMemLen)
-                (*pFlagsMemLen) = pLine->PointCount;
-
-            pTmpOutData = pLine->Points;
-            pTmpOutFlags = pLine->PointTypes;
-            break;
-        }
-        default:
-        {
-            pLine = pEntry->StageData;
-
-            if (pDataMemLen)
-                (*pDataMemLen) = pLine->PointCount * 2 * sizeof(float);
-
-            if (pFlagsMemLen)
-                (*pFlagsMemLen) = pLine->PointCount;
-
-            pTmpOutData = pLine->Points;
-            pTmpOutFlags = pLine->PointTypes;
-        }
-    }
-
-    if (ppPoints && pTmpOutData)
-    {
-        (*ppPoints) = pTmpOutData;
-    }
-
-    if (ppFlags && pTmpOutFlags)
-    {
-        (*ppFlags) = pTmpOutFlags;
-    }
-}
-
 BOOL
 GR_CALL
 PathStagesEntryGetProperty(
@@ -399,279 +311,33 @@ PathStagesEntryGetProperty(
     _Out_ PINT pOutLen
 )
 {
-    BOOL fResult = FALSE;
+    if (!pOutLen)
+        return FALSE;
+    *pOutLen = 0;
+    if (!pEntry || !pEntry->StageData || !pEntry->GetPropertyCallback)
+        return FALSE;
 
-    BOOL fIsFree = FALSE;
-    PBYTE pTmpOutData = NULL;
-    INT iOutLen = 0;
-
-    if (IS_LOGICAL_ITEM_PROPS(eProp) 
-        && 
-        (pEntry->StageType == PathStageTypeLogicalCurve 
-            || pEntry->StageType == PathStageTypeApproximated
-            || pEntry->StageType == PathStageTypeDashPattern
-            || pEntry->StageType == PathStageTypeThickLine))
-    {
-        PSLineItem pLine = pEntry->StageData;
-
-        switch (eProp)
-        {
-            case ESP_IS_CLOSED:
-            {
-                iOutLen = sizeof(pLine->ClosePath);
-                pTmpOutData = (PBYTE) & pLine->ClosePath;
-
-                fResult = TRUE;
-                break;
-            }
-            case ESP_IS_BESIERE:
-            {
-                iOutLen = sizeof(BOOL);
-                pTmpOutData = malloc(iOutLen);
-
-                if (!pTmpOutData)
-                {
-                    pTmpOutData = NULL;
-                    fResult = FALSE;
-                    fIsFree = FALSE;
-                    break;
-                }
-
-                BOOL* val = (BOOL *)pTmpOutData;
-
-                (*val) = (pLine->Type == LineItemType_Bezier);
-
-                fIsFree = TRUE;
-                fResult = TRUE;
-                break;
-            }
-            case ESP_PATH_LEN:
-            {
-                iOutLen = sizeof(pLine->PointCount);
-                pTmpOutData = malloc(sizeof(INT));
-
-                if (!pTmpOutData)
-                {
-                    pTmpOutData = NULL;
-                    fResult = FALSE;
-                    fIsFree = FALSE;
-                    break;
-                }
-
-                PINT val = (PINT)pTmpOutData;
-
-                (*val) = pLine->PointCount;
-
-                fIsFree = TRUE;
-                fResult = TRUE;
-                break;
-            }
-            case ESP_PATH_DATA:
-            {
-                PathStagesGetPathData(pEntry, (PFLOAT*)&pTmpOutData, NULL, &iOutLen, NULL);
-
-                fResult = TRUE;
-                break;
-            }
-            case ESP_PATH_FLAGS:
-            {
-                PathStagesGetPathData(pEntry, NULL, &pTmpOutData, NULL, &iOutLen);
-
-                fResult = TRUE;
-                break;
-            }
-
-            default:
-                fResult = FALSE;
-                break;
-        }
-    }
-    else if (IS_DASH_PATTERN_PROPS(eProp)
-        && pEntry->StageType == PathStageTypeDashPattern)
-    {
-        PSDashPatternItem pDashItem = (PSDashPatternItem)pEntry->StageData;
-
-		if (!pDashItem)
-			return FALSE;
-
-		switch (eProp)
-		{
-			case ESP_DASH_COUNT:
-			{
-				iOutLen = sizeof(INT);
-				pTmpOutData = malloc(iOutLen);
-
-				if (!pTmpOutData)
-				{
-					pTmpOutData = NULL;
-					fResult = FALSE;
-					fIsFree = FALSE;
-					break;
-				}
-
-				INT* val = (PINT)pTmpOutData;
-				(*val) = (INT)pDashItem->DashCount;
-
-				fIsFree = TRUE;
-				fResult = TRUE;
-				break;
-			}
-
-			case ESP_DASH_OFFSET:
-			{
-				iOutLen = sizeof(FLOAT);
-				pTmpOutData = malloc(iOutLen);
-
-				if (!pTmpOutData)
-				{
-					pTmpOutData = NULL;
-					fResult = FALSE;
-					fIsFree = FALSE;
-					break;
-				}
-
-				FLOAT* val = (PFLOAT)pTmpOutData;
-				(*val) = pDashItem->DashOffset;
-
-				fIsFree = TRUE;
-				fResult = TRUE;
-				break;
-			}
-
-			default:
-				fResult = FALSE;
-				break;
-		}
-    }
-    else if (IS_THICK_LINE_PROPS(eProp) 
-        && pEntry->StageType == PathStageTypeThickLine)
-    {
-        PSThickLineItem pThick = (PSThickLineItem)pEntry->StageData;
-        if (!pThick)
-            return FALSE;
-    
-        switch (eProp)
-        {
-            case ESP_THICKNESS:
-            {
-                iOutLen = sizeof(FLOAT);
-                pTmpOutData = malloc(iOutLen);
-                if (!pTmpOutData) { fResult = FALSE; break; }
-    
-                *((FLOAT*)pTmpOutData) = pThick->Thickness;
-                fIsFree = TRUE;
-                fResult = TRUE;
-                break;
-            }
-            case ESP_JOIN_STYLE:
-            {
-                iOutLen = sizeof(INT);
-                pTmpOutData = malloc(iOutLen);
-                if (!pTmpOutData) { fResult = FALSE; break; }
-    
-                *((INT*)pTmpOutData) = (INT)pThick->JoinStyle;
-                fIsFree = TRUE;
-                fResult = TRUE;
-                break;
-            }
-            case ESP_CAP_STYLE:
-            {
-                iOutLen = sizeof(INT);
-                pTmpOutData = malloc(iOutLen);
-                if (!pTmpOutData) { fResult = FALSE; break; }
-    
-                *((INT*)pTmpOutData) = (INT)pThick->CapStyle;
-                fIsFree = TRUE;
-                fResult = TRUE;
-                break;
-            }
-            case ESP_MITER_LIMIT:
-            {
-                iOutLen = sizeof(FLOAT);
-                pTmpOutData = malloc(iOutLen);
-                if (!pTmpOutData) { fResult = FALSE; break; }
-    
-                *((FLOAT*)pTmpOutData) = pThick->MiterLimit;
-                fIsFree = TRUE;
-                fResult = TRUE;
-                break;
-            }
-            default:
-                fResult = FALSE;
-                break;
-        }
-    }
-    else
-    {
-        switch (eProp)
-        {
-            case ESP_TYPE:
-            {
-                iOutLen = sizeof(pEntry->StageType);
-                pTmpOutData = (PBYTE) & pEntry->StageType;
-
-                fResult = TRUE;
-                break;
-            }
-            default:
-                fResult = FALSE;
-                break;
-        }
-    }
-
-    *pOutLen = iOutLen;
-    if (pTmpOutData && pOutData)
-    {
-        memcpy(pOutData, pTmpOutData, iOutLen);
-    }
-
-    if (fIsFree)
-    {
-        free(pTmpOutData);
-    }
-
-    return fResult;
+    return pEntry->GetPropertyCallback(pEntry, eProp, pOutData, pOutLen);
 }
 
 BOOL
 GR_CALL
 PathStagesGetProperty(
-	_In_ PVOID pObject,
-	_In_ INT eProp,
-	_Maybenull_ PVOID pOutData,
-	_Out_ PINT pOutLen
+    _In_ PVOID pObject,
+    _In_ INT eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
 )
 {
     if (!pOutLen)
-    {
         return FALSE;
-    }
-
-    EObjectType type = ((PSBaseObject)pObject)->type;
-
     *pOutLen = 0;
+    if (!pObject)
+        return FALSE;
 
-    switch (type)
-    {           
-        case EOT_PathStages:
-        {
-            PSPathStages pStages = pObject;
-
-            __debugbreak();
-
-            return FALSE;
-        }
-        case EOT_PipeStageEntry:
-		{
-			PSPathStageEntry pEntry = pObject;
-
-            return PathStagesEntryGetProperty(pEntry, eProp, pOutData, pOutLen);
-		}
-    default:
-        break;
-    }
+    if (((PSBaseObject)pObject)->type == EOT_PipeStageEntry)
+        return PathStagesEntryGetProperty((PSPathStageEntry)pObject,
+            (EStageProps)eProp, pOutData, pOutLen);
 
     return FALSE;
 }
-
-

@@ -12,7 +12,7 @@ namespace GeometryRenderer.NET.Bindings
         /// <param name="eProp">Идентификатор свойства</param>
         /// <param name="pOutData">Указатель на буфер для выходных данных (может быть NULL)</param>
         /// <param name="pOutLen">Указатель на размер выходных данных (вход/выход)</param>
-        /// <returns>0 при успехе, иначе код ошибки</returns>
+        /// <returns>1 при успехе, 0 при ошибке</returns>
         [DllImport(
             NtivePinvokeDefs.GeometryRendererDll, 
             CallingConvention = CallingConvention.Cdecl)]

@@ -106,6 +106,8 @@ namespace GeometryRenderer.NET.TestApp
                     pts = (pl.CurrentStage as PipeThickLineStage)?.Path;
 
                     flags = (pl.CurrentStage as PipeThickLineStage)?.PathFlags;
+
+                    var thck = (pl.CurrentStage as PipeThickLineStage)?.Thickness;
                 }
 
 

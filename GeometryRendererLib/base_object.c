@@ -1,5 +1,28 @@
 #include "stdafx.h"
 
+BOOL
+GR_CALL
+CopyObjectProperty(
+    _Maybenull_ PCVOID pData,
+    _In_ INT iDataLen,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    if (!pOutLen)
+        return FALSE;
+
+    *pOutLen = 0;
+    if (iDataLen < 0 || (iDataLen > 0 && !pData))
+        return FALSE;
+
+    *pOutLen = iDataLen;
+    if (pOutData && iDataLen > 0)
+        memcpy(pOutData, pData, (size_t)iDataLen);
+
+    return TRUE;
+}
+
 _Check_return_
 GR_EXPORT
 INT
@@ -13,6 +36,9 @@ GetObjectProperty(
 {
 	int result = 0;
 
+	if (pOutLen)
+		*pOutLen = 0;
+
 	if (!pObject || !pOutLen)
 	{
 		pOutData = NULL;
@@ -22,8 +48,6 @@ GetObjectProperty(
 	*pOutLen = 0;
 
 	EObjectType type = ((PSBaseObject)pObject)->type;
-
-	INT iOutLen = 0;
 
 	if (type >= EOT_TypesCount)
 	{

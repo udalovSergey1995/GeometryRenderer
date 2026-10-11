@@ -1,5 +1,17 @@
 #include "stdafx.h"
 
+BOOL
+GR_CALL
+FlattenItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    return LineItemGetProperty(pEntry, eProp, pOutData, pOutLen);
+}
+
 /* -------------------------------------------------------------
    Внутренние константы
    ------------------------------------------------------------- */

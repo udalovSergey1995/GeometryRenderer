@@ -1,5 +1,42 @@
 #include "stdafx.h"
 
+BOOL
+GR_CALL
+ThickLineItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    PSThickLineItem pThick;
+    if (!pOutLen)
+        return FALSE;
+    *pOutLen = 0;
+    if (!pEntry || !pEntry->StageData)
+        return FALSE;
+
+    pThick = (PSThickLineItem)pEntry->StageData;
+    if (IS_LOGICAL_ITEM_PROPS(eProp))
+        return LineItemGetPathProperty(pThick->ThickGeometry, eProp, pOutData, pOutLen);
+
+    switch (eProp)
+    {
+        case ESP_TYPE:
+            return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
+        case ESP_THICKNESS:
+            return CopyObjectProperty(&pThick->Thickness, sizeof(pThick->Thickness), pOutData, pOutLen);
+        case ESP_JOIN_STYLE:
+            return CopyObjectProperty(&pThick->JoinStyle, sizeof(pThick->JoinStyle), pOutData, pOutLen);
+        case ESP_CAP_STYLE:
+            return CopyObjectProperty(&pThick->CapStyle, sizeof(pThick->CapStyle), pOutData, pOutLen);
+        case ESP_MITER_LIMIT:
+            return CopyObjectProperty(&pThick->MiterLimit, sizeof(pThick->MiterLimit), pOutData, pOutLen);
+        default:
+            return FALSE;
+    }
+}
+
 /* -------------------------------------------------------------
    Внутренние константы
    ------------------------------------------------------------- */

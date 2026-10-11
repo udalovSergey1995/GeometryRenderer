@@ -20,6 +20,25 @@ typedef struct _LineItem
     BOOL                ClosePath;
 } SLineItem, *PSLineItem;
 
+BOOL
+GR_CALL
+LineItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
+
+/* Общие свойства LineItem, включая вложенную геометрию dash/thick. */
+BOOL
+GR_CALL
+LineItemGetPathProperty(
+    _In_ PSLineItem pLine,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
+
 /* -------------------------------------------------------------
    Алокация нового айтема вместе с собственными массивами
    ------------------------------------------------------------- */

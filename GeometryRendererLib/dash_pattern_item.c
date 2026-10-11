@@ -1,5 +1,38 @@
 #include "stdafx.h"
 
+BOOL
+GR_CALL
+DashPatternItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    PSDashPatternItem pDash;
+    if (!pOutLen)
+        return FALSE;
+    *pOutLen = 0;
+    if (!pEntry || !pEntry->StageData)
+        return FALSE;
+
+    pDash = (PSDashPatternItem)pEntry->StageData;
+    if (IS_LOGICAL_ITEM_PROPS(eProp))
+        return LineItemGetPathProperty(pDash->DashedLine, eProp, pOutData, pOutLen);
+
+    switch (eProp)
+    {
+        case ESP_TYPE:
+            return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
+        case ESP_DASH_COUNT:
+            return CopyObjectProperty(&pDash->DashCount, sizeof(pDash->DashCount), pOutData, pOutLen);
+        case ESP_DASH_OFFSET:
+            return CopyObjectProperty(&pDash->DashOffset, sizeof(pDash->DashOffset), pOutData, pOutLen);
+        default:
+            return FALSE;
+    }
+}
+
 /* -------------------------------------------------------------
    Внутренние константы
    ------------------------------------------------------------- */

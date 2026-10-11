@@ -5,6 +5,15 @@
    ------------------------------------------------------------- */
 #define FLATTEN_DEFAULT_TOLERANCE 0.25f
 
+BOOL
+GR_CALL
+FlattenItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
+
    /* -------------------------------------------------------------
       Создание аппроксимированного (flattened) айтема из логического
       ------------------------------------------------------------- */

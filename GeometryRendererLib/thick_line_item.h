@@ -41,6 +41,15 @@ typedef struct _ThickLineItem
     PSLineItem          ThickGeometry;   // результат (обычно замкнутый контур)
 } SThickLineItem, * PSThickLineItem;
 
+BOOL
+GR_CALL
+ThickLineItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
+
 /* -------------------------------------------------------------
    Создание ThickLine айтема из логического/аппроксимированного пути.
    Исходный LineItem не должен содержать BezierControl точек.

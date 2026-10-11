@@ -1,4 +1,66 @@
 ﻿#include "stdafx.h"
+#include <limits.h>
+
+BOOL
+GR_CALL
+LineItemGetPathProperty(
+    _In_ PSLineItem pLine,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    BOOL isBezier;
+    if (!pOutLen)
+        return FALSE;
+    *pOutLen = 0;
+    if (!pLine)
+        return FALSE;
+
+    switch (eProp)
+    {
+        case ESP_IS_CLOSED:
+            return CopyObjectProperty(&pLine->ClosePath, sizeof(pLine->ClosePath), pOutData, pOutLen);
+        case ESP_IS_BESIERE:
+            isBezier = pLine->Type == LineItemType_Bezier;
+            return CopyObjectProperty(&isBezier, sizeof(isBezier), pOutData, pOutLen);
+        case ESP_PATH_LEN:
+            return CopyObjectProperty(&pLine->PointCount, sizeof(pLine->PointCount), pOutData, pOutLen);
+        case ESP_PATH_DATA:
+            if (pLine->PointCount > INT_MAX / (2 * sizeof(FLOAT)))
+                return FALSE;
+            return CopyObjectProperty(pLine->Points, (INT)(pLine->PointCount * 2 * sizeof(FLOAT)),
+                pOutData, pOutLen);
+        case ESP_PATH_FLAGS:
+            if (pLine->PointCount > INT_MAX / sizeof(LINE_POINT_TYPE))
+                return FALSE;
+            return CopyObjectProperty(pLine->PointTypes, (INT)(pLine->PointCount * sizeof(LINE_POINT_TYPE)),
+                pOutData, pOutLen);
+        default:
+            return FALSE;
+    }
+}
+
+BOOL
+GR_CALL
+LineItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+)
+{
+    if (!pOutLen)
+        return FALSE;
+    *pOutLen = 0;
+    if (!pEntry || !pEntry->StageData)
+        return FALSE;
+
+    if (eProp == ESP_TYPE)
+        return CopyObjectProperty(&pEntry->StageType, sizeof(pEntry->StageType), pOutData, pOutLen);
+
+    return LineItemGetPathProperty((PSLineItem)pEntry->StageData, eProp, pOutData, pOutLen);
+}
 
 /* -------------------------------------------------------------
    LineItemAllocate

@@ -17,6 +17,15 @@ typedef struct _DashPatternItem
     PSLineItem                      DashedLine;
 } SDashPatternItem, * PSDashPatternItem;
 
+BOOL
+GR_CALL
+DashPatternItemGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
+
 /* -------------------------------------------------------------
    Создание dash pattern айтема из логического айтема.
    Логический айтем не должен содержать BezierControl точек,

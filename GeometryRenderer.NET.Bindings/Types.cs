@@ -115,8 +115,8 @@ namespace GeometryRenderer.NET.Bindings.Types
                     base._nativeObject,
                     (int)PathStagesEntryProps.DashCount);
 
-        public int DashOffset
-            => BaseNativeObject.GetObjectPropertyInt(
+        public float DashOffset
+            => BaseNativeObject.GetObjectPropertyFloat(
                     base._nativeObject,
                     (int)PathStagesEntryProps.DashOffset);
 

@@ -42,6 +42,20 @@ VOID
 /*=============================================================================
  *  Элемент списка этапов
  *===========================================================================*/
+struct _PathStageEntry;
+
+/* Единая сигнатура обработчиков свойств всех path stage айтемов.
+   pOutData == NULL: запрос размера. pOutLen: размер результата в байтах.
+   TRUE: свойство получено, FALSE: неизвестное свойство/ошибка. */
+typedef
+BOOL
+(GR_CALL *GET_PATH_STAGE_PROPERTY)(
+    _In_ struct _PathStageEntry* pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+    );
+
 typedef struct _PathStageEntry
 {
     SBaseObject Base;
@@ -53,6 +67,8 @@ typedef struct _PathStageEntry
     PVOID StageData;
 
     PFN_PATH_STAGE_FREE FreeCallback;
+
+    GET_PATH_STAGE_PROPERTY GetPropertyCallback;
 
 } SPathStageEntry, *PSPathStageEntry;
 
@@ -117,7 +133,8 @@ PathStagesAddStage(
     _Inout_ PSPathStages PathStages,
     _In_ EPathStageType StageType,
     _In_ PVOID StageData,
-    _In_opt_ PFN_PATH_STAGE_FREE FreeCallback
+    _In_opt_ PFN_PATH_STAGE_FREE FreeCallback,
+    _In_ GET_PATH_STAGE_PROPERTY GetPropertyCallback
     );
 
 VOID
@@ -170,6 +187,15 @@ PathStagesEnum(
     _In_ PFN_PATH_STAGE_ENUM Callback,
     _In_opt_ PVOID Context
     );
+
+BOOL
+GR_CALL
+PathStagesEntryGetProperty(
+    _In_ PSPathStageEntry pEntry,
+    _In_ EStageProps eProp,
+    _Maybenull_ PVOID pOutData,
+    _Out_ PINT pOutLen
+);
 
 BOOL
 GR_CALL

@@ -18,7 +18,7 @@ namespace GeometryRenderer.NET.Bindings
         /// <param name="eProp">Идентификатор свойства</param>
         /// <param name="pOutData">Указатель на буфер для выходных данных (может быть NULL)</param>
         /// <param name="pOutLen">Указатель на размер выходных данных (вход/выход)</param>
-        /// <returns>0 при успехе, иначе код ошибки</returns>
+        /// <returns>1 при успехе, 0 при ошибке</returns>
         [DllImport(
             GeometryRendererDll,
             CallingConvention = CallingConvention.Cdecl)]
@@ -35,7 +35,7 @@ namespace GeometryRenderer.NET.Bindings
             int requiredSize = 0;
             int result = GetObjectProperty(pObject, propertyId, IntPtr.Zero, ref requiredSize);
 
-            if (result == 0)
+            if (result != 1)
                 throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
             if (requiredSize <= 0)
@@ -50,7 +50,7 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = requiredSize;
                 result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result == 0)
+                if (result != 1)
                     throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
                 if (bufferSize > requiredSize)
@@ -85,10 +85,10 @@ namespace GeometryRenderer.NET.Bindings
             if (requiredSize <= 0)
                 return new GRNativePoint[0];
 
-            requiredSize = requiredSize / 2 / sizeof(float);
+            int pointCount = requiredSize / 2 / sizeof(float);
 
             // Шаг 2: Выделяем буфер и получаем данные
-            GRNativePoint[] buffer = new GRNativePoint[requiredSize];
+            GRNativePoint[] buffer = new GRNativePoint[pointCount];
             
             var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
             IntPtr ptr = handle.AddrOfPinnedObject(); //Marshal.AllocHGlobal(requiredSize);
@@ -98,7 +98,7 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = requiredSize;
                 result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result == 0)
+                if (result != 1)
                     throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
                 return buffer;
@@ -122,7 +122,7 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = size;
                 int result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result != 0)
+                if (result != 1)
                     throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
                 if (bufferSize != size)
@@ -175,7 +175,7 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = sizeof(float);
                 int result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result != 0)
+                if (result != 1)
                     throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
                 if (bufferSize != sizeof(float))
@@ -198,7 +198,7 @@ namespace GeometryRenderer.NET.Bindings
             int requiredSize = 0;
             int result = GetObjectProperty(pObject, propertyId, IntPtr.Zero, ref requiredSize);
 
-            if (result != 0)
+            if (result != 1)
                 throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
             if (requiredSize <= 0)
@@ -214,7 +214,7 @@ namespace GeometryRenderer.NET.Bindings
                 int bufferSize = requiredSize;
                 result = GetObjectProperty(pObject, propertyId, ptr, ref bufferSize);
 
-                if (result != 0)
+                if (result != 1)
                     throw new InvalidOperationException($"GetObjectProperty failed with code: {result}");
 
                 // Предполагаем Unicode строку (2 байта на символ)
