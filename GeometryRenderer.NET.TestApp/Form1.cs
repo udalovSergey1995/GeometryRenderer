@@ -99,7 +99,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 if (1 == 1)
                 {
-                    pl.SetThickLine(thick, ThickLineJoin.Miter, ThickLineCap.Round);
+                    pl.SetThickLine(thick, ThickLineJoin.Bevel, ThickLineCap.Flat);
 
                     plType = pl.CurrentStage.StageType;
 
@@ -118,7 +118,8 @@ namespace GeometryRenderer.NET.TestApp
                 if (plType == EPathStageType.PathStageTypeThickLine)
                 {
                     gp.FillMode = FillMode.Winding;
-                    e.Graphics.FillPath(Brushes.Red, gp);
+                    var br = new SolidBrush(Color.FromArgb(150, Color.Red));
+                    e.Graphics.FillPath(br, gp);
                 }
                 else
                 {

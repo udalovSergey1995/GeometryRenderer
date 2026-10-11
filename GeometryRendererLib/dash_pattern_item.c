@@ -15,6 +15,7 @@ typedef struct _DASH_BUFFER
     PLINE_POINT_TYPE    Types;
     UINT                Capacity;
     UINT                Count;
+    BOOL                NeedsMove;
 } DASH_BUFFER, * PDASH_BUFFER;
 
 /* -------------------------------------------------------------
@@ -31,6 +32,7 @@ DashBufferInit(
     Buffer->Types = NULL;
     Buffer->Capacity = 0;
     Buffer->Count = 0;
+    Buffer->NeedsMove = TRUE;
     return TRUE;
 }
 
@@ -357,6 +359,12 @@ DashPatternSplitSegment(
     // Чётные индексы (0,2,4...) — dash, нечётные — gap
     isDash = ((segIdx % 2) == 0);
 
+    // Сохраняем разрыв пера между отрезками и отдельными подпутями.
+    if (!isDash)
+    {
+        Buffer->NeedsMove = TRUE;
+    }
+
     //----------------------------------------------------------
     // 3. Основной цикл: идём по отрезку, пока он не закончится
     //----------------------------------------------------------
@@ -377,64 +385,26 @@ DashPatternSplitSegment(
 
         if (isDash)
         {
-            //--------------------------------------------------
-            // Мы находимся в режиме "рисуем" (dash)
-            //--------------------------------------------------
-
-            // Нужно ли начинать новый subpath (ставить Move)?
-            // Ставим Move только если:
-            //   - буфер пустой
-            //   - или последняя точка была Move (уже начали, но ещё не рисовали)
-            //   - или предыдущий сегмент был gap (тогда последняя точка
-            //     в буфере относится к предыдущему dash)
-            BOOL needMove = FALSE;
-
-            if (Buffer->Count == 0)
+            //----- Режим "рисуем" -----
+            // Ставим Move только если пришли из gap (или это самое начало)
+            if (Buffer->NeedsMove)
             {
-                needMove = TRUE;
-            }
-            else
-            {
-                BYTE lastType = Buffer->Types[Buffer->Count - 1];
-
-                // Если последняя точка — Move, значит мы уже поставили
-                // начало, но ещё не добавили ни одной Line.
-                // В этом случае Move ставить не нужно.
-                if (lastType == LinePointType_Move)
-                {
-                    needMove = FALSE;
-                }
-                else
-                {
-                    // Последняя точка была Line → значит предыдущий
-                    // видимый сегмент закончился. Начинаем новый.
-                    needMove = TRUE;
-                }
-            }
-
-            if (needMove)
-            {
-                // Начинаем новый видимый штрих
                 if (!DashBufferAppendPoint(Buffer, curX, curY, LinePointType_Move))
                 {
                     return FALSE;
                 }
             }
-
-            // Добавляем конечную точку текущего кусочка dash
+            // Добавляем конечную точку текущего кусочка
             if (!DashBufferAppendPoint(Buffer, ix, iy, LinePointType_Line))
             {
                 return FALSE;
             }
+            Buffer->NeedsMove = FALSE;
         }
         else
-        {
-            //--------------------------------------------------
-            // Мы находимся в режиме "gap" (пропуск)
-            //--------------------------------------------------
-            // Ничего не пишем в буфер.
-            // Просто передвигаем "перо".
-            // Следующий dash сам поставит Move, когда начнётся.
+        {      
+            // Ничего не пишем, только двигаем перо
+            Buffer->NeedsMove = TRUE;
         }
 
         // Обновляем текущую позицию пера
@@ -500,6 +470,9 @@ DashPatternProcessSubPath(
 
     if (StartIdx >= EndIdx)
         return TRUE;
+
+    // Новый исходный subpath не соединяется с предыдущим штрихом.
+    Buffer->NeedsMove = TRUE;
 
     x0 = LineItem->Points[StartIdx * 2];
     y0 = LineItem->Points[StartIdx * 2 + 1];
@@ -596,7 +569,7 @@ DashPatternBuildDashedLine(
 
     for (i = 0; i < LineItem->PointCount; i++)
     {
-        if (LineItem->PointTypes[i] == LinePointType_Move)
+        if (GET_POINT_TYPE(LineItem->PointTypes[i]) == LinePointType_Move)
         {
             if (inSubPath)
             {
@@ -615,7 +588,14 @@ DashPatternBuildDashedLine(
             subPathStart = i;
             inSubPath = TRUE;
         }
-        else if (IS_CLOSE_POINT(LineItem->PointTypes[i]))
+        else if (!inSubPath)
+        {
+            // После Close следующая точка начинает новый subpath даже без Move.
+            subPathStart = i;
+            inSubPath = TRUE;
+        }
+
+        if (IS_CLOSE_POINT(LineItem->PointTypes[i]))
         {
             if (inSubPath)
             {
