@@ -7,6 +7,8 @@ typedef struct _PathPipeLine
 } SPathPipeLine, * PSPathPipeLine;
 
 GR_EXPORT BOOL GR_CALL PathPipeLineRasterizeSlabs(PSPathPipeLine Pipeline);
+GR_EXPORT BOOL GR_CALL PathPipeLineDrawSlabs(PSPathPipeLine Pipeline,
+    PBYTE Pixels, INT BufferLength, INT Width, INT Height, INT Stride, UINT Color);
 
 /*
 * Проинициализировать объект паплайна

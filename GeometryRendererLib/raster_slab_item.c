@@ -217,3 +217,46 @@ GR_EXPORT FLOAT GR_CALL RasterSlabGetCoverage(PSPathStageEntry entry, FLOAT x, F
             area += PixelArea(item->Slabs + i, x, y);
     return (FLOAT)fmin(1.0, area);
 }
+
+BOOL GR_CALL RasterSlabItemDraw(PSRasterSlabItem item, PBYTE pixels,
+    INT width, INT height, INT stride, UINT color)
+{
+    double* coverage;
+    UINT first = 0;
+    if (!item || !pixels || width <= 0 || height <= 0) return FALSE;
+    coverage = (double*)calloc((size_t)width, sizeof(double));
+    if (!coverage) return FALSE;
+    /* Слэбы отсортированы по Y: накопление покрытия и смешивание один раз на строку. */
+    while (first < item->Count)
+    {
+        INT y = (INT)floorf(item->Slabs[first].Y), x;
+        UINT end = first + 1, i;
+        while (end < item->Count && (INT)floorf(item->Slabs[end].Y) == y) ++end;
+        if (y >= 0 && y < height)
+        {
+            memset(coverage, 0, (size_t)width * sizeof(double));
+            for (i = first; i < end; ++i)
+            {
+                SRasterSlab* s = item->Slabs + i;
+                double left = fmin(s->XLeftTop, s->XLeftBottom);
+                double right = fmax(s->XRightTop, s->XRightBottom);
+                INT startX = (INT)fmax(0, fmin(width, floor(left)));
+                INT endX = (INT)fmax(0, fmin(width, ceil(right)));
+                for (x = startX; x < endX; ++x) coverage[x] += PixelArea(s, x, y);
+            }
+            for (x = 0; x < width; ++x)
+                if (coverage[x] > 0)
+                {
+                    double alpha = ((color >> 24) & 255) / 255.0 * fmin(1, coverage[x]);
+                    PBYTE p = pixels + (size_t)y * stride + (size_t)x * 4;
+                    UINT c;
+                    for (c = 0; c < 3; ++c)
+                        p[c] = (BYTE)fmin(255, floor(((color >> (c * 8)) & 255) * alpha + p[c] * (1 - alpha) + 0.5));
+                    p[3] = (BYTE)fmin(255, floor(255 * alpha + p[3] * (1 - alpha) + 0.5));
+                }
+        }
+        first = end;
+    }
+    free(coverage);
+    return TRUE;
+}

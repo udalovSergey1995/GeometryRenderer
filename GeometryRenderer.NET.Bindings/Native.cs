@@ -6,6 +6,10 @@ namespace GeometryRenderer.NET.Bindings
     public static class Native
     {
         [DllImport(NtivePinvokeDefs.GeometryRendererDll, CallingConvention = CallingConvention.StdCall)]
+        public static extern int PathPipeLineDrawSlabs(IntPtr pipeline, [In, Out] byte[] pixels,
+            int bufferLength, int width, int height, int stride, uint color);
+
+        [DllImport(NtivePinvokeDefs.GeometryRendererDll, CallingConvention = CallingConvention.StdCall)]
         public static extern int PathPipeLineRasterizeSlabs(IntPtr pipeline);
 
         [DllImport(NtivePinvokeDefs.GeometryRendererDll, CallingConvention = CallingConvention.StdCall)]

@@ -410,6 +410,15 @@ namespace GeometryRenderer.NET.Bindings.Types
                 throw new InvalidOperationException("Slab rasterization failed: unsupported geometry, invalid coordinates or resource limit");
         }
 
+        /// <summary>Source-over в BGRA32 с premultiplied alpha. Слэбы создаются автоматически.</summary>
+        public void DrawSlabs(byte[] pixels, int width, int height, int stride, Color color)
+        {
+            if (pixels == null) throw new ArgumentNullException("pixels");
+            if (Native.PathPipeLineDrawSlabs(_nativeObject, pixels, pixels.Length,
+                width, height, stride, unchecked((uint)color.ToArgb())) != 1)
+                throw new InvalidOperationException("Slab rendering failed: invalid buffer or geometry");
+        }
+
         public void Dispose()
         {
             if (_nativeObject != IntPtr.Zero)

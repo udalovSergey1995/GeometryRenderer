@@ -16,6 +16,9 @@ typedef struct _RasterSlabItem
 } SRasterSlabItem, *PSRasterSlabItem;
 
 PSRasterSlabItem GR_CALL RasterSlabItemCreate(PSLineItem Line);
+/* Буфер BGRA32 с premultiplied alpha, положительный Stride, цвет ARGB. */
+BOOL GR_CALL RasterSlabItemDraw(PSRasterSlabItem Item, PBYTE Pixels,
+    INT Width, INT Height, INT Stride, UINT Color);
 VOID GR_CALL RasterSlabItemFree(PVOID Data);
 BOOL GR_CALL RasterSlabItemGetProperty(PSPathStageEntry Entry, EStageProps Property,
     PVOID Output, PINT Length);

@@ -1,5 +1,29 @@
 #include "stdafx.h"
 
+GR_EXPORT BOOL GR_CALL PathPipeLineDrawSlabs(PSPathPipeLine pipeline,
+    PBYTE pixels, INT bufferLength, INT width, INT height, INT stride, UINT color)
+{
+    PSPathStageEntry entry;
+    if (!pipeline || !pixels || width <= 0 || height <= 0 || stride <= 0 || bufferLength <= 0 ||
+        (uint64_t)width * 4 > (uint64_t)stride ||
+        (uint64_t)(height - 1) * stride + (uint64_t)width * 4 > (uint64_t)bufferLength)
+        return FALSE;
+    entry = PathStagesGetLastStage(&pipeline->m_sPathStages);
+    if (!entry) return FALSE;
+    if (entry->StageType == PathStageTypeLogicalCurve &&
+        ((PSLineItem)entry->StageData)->Type == LineItemType_Bezier)
+    {
+        if (!PathPipeLineFlattenizeLogicalLine(pipeline)) return FALSE;
+        entry = PathStagesGetLastStage(&pipeline->m_sPathStages);
+    }
+    if (entry->StageType != PathStageTypeRasterSlab)
+    {
+        if (!PathPipeLineRasterizeSlabs(pipeline)) return FALSE;
+        entry = PathStagesGetLastStage(&pipeline->m_sPathStages);
+    }
+    return RasterSlabItemDraw((PSRasterSlabItem)entry->StageData, pixels, width, height, stride, color);
+}
+
 GR_EXPORT BOOL GR_CALL PathPipeLineRasterizeSlabs(PSPathPipeLine pipeline)
 {
     PSPathStageEntry entry;

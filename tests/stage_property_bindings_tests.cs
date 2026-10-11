@@ -70,6 +70,16 @@ internal static class StagePropertyBindingsTests
                 Check(Math.Abs(stage.GetCoverage(0, 0) - 0.2f) < 0.00001f, "Analytic slab coverage");
             }
             Console.WriteLine("Raster slab C# tests: PASS");
+            using (var pipeline = new PipeLineObject())
+            {
+                pipeline.AddLinePath(new float[] { 0, .1f, 2, .1f, 2, .3f, 0, .3f }, new byte[] { 0, 1, 1, 0x81 });
+                var pixels = new byte[8];
+                pipeline.DrawSlabs(pixels, 2, 1, 8, System.Drawing.Color.Red);
+                Check(pixels[2] == 51 && pixels[3] == 51, "Native slab render buffer");
+                int count = pipeline.EntriesCount;
+                pipeline.DrawSlabs(pixels, 2, 1, 8, System.Drawing.Color.Red);
+                Check(pipeline.EntriesCount == count, "Raster stage reused");
+            }
             return 0;
         }
         catch (Exception error)

@@ -36,8 +36,92 @@ namespace GeometryRenderer.NET.TestApp
 
         private void Form1_Paint(object? sender, PaintEventArgs e)
         {
-            DrawIosDesktop(e.Graphics);
-            DrawGeometryDemo(e);
+            DrawSlabRenderingTest(e.Graphics);
+        }
+
+        private void DrawSlabRenderingTest(Graphics graphics)
+        {
+            int width = ClientSize.Width, height = ClientSize.Height;
+            if (width <= 0 || height <= 0) return;
+            int stride = checked(width * 4);
+            var pixels = new byte[checked(stride * height)];
+            // Непрозрачный фон BGRA; вся геометрия ниже рисуется нативным DrawSlabs.
+            for (int i = 0; i < pixels.Length; i += 4)
+            {
+                pixels[i] = 40; pixels[i + 1] = 30; pixels[i + 2] = 25; pixels[i + 3] = 255;
+            }
+            float unit = Math.Min(width, height);
+            float[] Points(params float[] normalized)
+            {
+                for (int i = 0; i < normalized.Length; i += 2)
+                {
+                    normalized[i] *= width;
+                    normalized[i + 1] *= height;
+                }
+                return normalized;
+            }
+            var joins = new[] { ThickLineJoin.Miter, ThickLineJoin.Round, ThickLineJoin.Bevel };
+            var caps = new[] { ThickLineCap.Flat, ThickLineCap.Round, ThickLineCap.Square };
+            for (int row = 0; row < 3; row++)
+                for (int col = 0; col < 3; col++)
+                {
+                    float cx = 0.18f + col * 0.32f, cy = 0.17f + row * 0.20f;
+                    using var pipeline = new PipeLineObject();
+                    pipeline.AddLinePath(Points(cx - 0.085f, cy + 0.035f, cx, cy - 0.045f,
+                        cx + 0.085f, cy + 0.035f), new byte[] { 0, 1, 1 });
+                    pipeline.FlettenizePath();
+                    pipeline.SetThickLine(unit * 0.045f, joins[row], caps[col]);
+                    // Слева — автоматическая растеризация, справа — явная.
+                    if (col == 2) pipeline.RasterizeSlabs();
+                    pipeline.DrawSlabs(pixels, width, height, stride, Color.FromArgb(220, 95, 190, 245));
+                }
+
+            // Отверстие: два противоположно ориентированных подпути в одном Winding-проходе.
+            using (var pipeline = new PipeLineObject())
+            {
+                pipeline.AddLinePath(Points(0.07f, 0.76f, 0.40f, 0.76f, 0.40f, 0.95f, 0.07f, 0.95f,
+                    0.16f, 0.80f, 0.16f, 0.91f, 0.31f, 0.91f, 0.31f, 0.80f),
+                    new byte[] { 0, 1, 1, 0x81, 0, 1, 1, 0x81 });
+                pipeline.DrawSlabs(pixels, width, height, stride, Color.FromArgb(200, 245, 155, 95));
+            }
+
+            // Пересекающиеся прозрачные штрихи: смешивание с существующим буфером.
+            foreach (bool reverse in new[] { false, true })
+            {
+                using var pipeline = new PipeLineObject();
+                pipeline.AddLinePath(reverse ? Points(0.58f, 0.92f, 0.90f, 0.79f)
+                    : Points(0.58f, 0.79f, 0.90f, 0.92f), new byte[] { 0, 1 });
+                pipeline.FlettenizePath();
+                pipeline.SetThickLine(unit * 0.065f, ThickLineJoin.Round, ThickLineCap.Round);
+                pipeline.DrawSlabs(pixels, width, height, stride,
+                    reverse ? Color.FromArgb(150, 255, 110, 160) : Color.FromArgb(150, 110, 240, 170));
+            }
+
+            using var bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            var data = bitmap.LockBits(new Rectangle(0, 0, width, height),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+            try
+            {
+                for (int y = 0; y < height; y++)
+                    System.Runtime.InteropServices.Marshal.Copy(pixels, y * stride,
+                        IntPtr.Add(data.Scan0, y * data.Stride), stride);
+            }
+            finally { bitmap.UnlockBits(data); }
+            // GDI+ только показывает готовый буфер и рисует подписи.
+            graphics.DrawImageUnscaled(bitmap, 0, 0);
+            using var font = new Font("Segoe UI", unit * 0.025f, FontStyle.Regular, GraphicsUnit.Pixel);
+            using var brush = new SolidBrush(Color.White);
+            using var centered = new StringFormat { Alignment = StringAlignment.Center };
+            graphics.DrawString("Native slabs · Winding · area AA", font, brush,
+                new PointF(width * 0.5f, height * 0.025f), centered);
+            for (int row = 0; row < 3; row++)
+                for (int col = 0; col < 3; col++)
+                    graphics.DrawString($"{joins[row]} / {caps[col]}", font, brush,
+                        new PointF(width * (0.18f + col * 0.32f), height * (0.23f + row * 0.20f)), centered);
+            graphics.DrawString("Winding: отверстие", font, brush,
+                new PointF(width * 0.235f, height * 0.70f), centered);
+            graphics.DrawString("Alpha: пересечение", font, brush,
+                new PointF(width * 0.74f, height * 0.70f), centered);
         }
 
         private void DrawIosDesktop(Graphics graphics)

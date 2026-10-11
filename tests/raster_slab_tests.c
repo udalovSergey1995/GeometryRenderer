@@ -50,6 +50,23 @@ int main(void)
     Test(hole, eight, 8, 12, 1, 1, 0);
     Test(overlap, eight, 8, 6, 1, 0, 1);
     {
+        PSPathPipeLine pipe = PathPipeLineCreate();
+        BYTE pixels[12] = { 0 };
+        PSPathStageEntry cached;
+        CHECK(PathPipeLineAddLogicalLine(pipe, thin, four, 4, FALSE, FALSE));
+        CHECK(!PathPipeLineDrawSlabs(pipe, pixels, 3, 2, 1, 12, 0xffff0000u));
+        CHECK(pipe->m_sPathStages.Count == 1);
+        pixels[8] = 123;
+        CHECK(PathPipeLineDrawSlabs(pipe, pixels, 12, 2, 1, 12, 0xffff0000u));
+        CHECK(pixels[2] == 51 && pixels[3] == 51 && pixels[6] == 51 && pixels[8] == 123);
+        cached = PathPipeLineGetLastStage(pipe);
+        memset(pixels, 0, sizeof(pixels)); pixels[0] = 255; pixels[3] = 255;
+        CHECK(PathPipeLineDrawSlabs(pipe, pixels, 12, 2, 1, 12, 0xffff0000u));
+        CHECK(pixels[0] == 204 && pixels[2] == 51 && pixels[3] == 255);
+        CHECK(PathPipeLineGetLastStage(pipe) == cached && pipe->m_sPathStages.Count == 2);
+        PathPipeLineDestroy(pipe);
+    }
+    {
         FLOAT line[] = { 0, 0, 10, 0 };
         BYTE flags[] = { 0, 1 };
         PSPathPipeLine pipe = PathPipeLineCreate();

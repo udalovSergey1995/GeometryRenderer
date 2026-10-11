@@ -32,3 +32,17 @@ Build Debug|x64 and run `tests\run_property_tests.cmd` from an x64 Visual Studio
 Developer Command Prompt. Tests cover fractional height, analytic pixel areas,
 negative coordinates, holes, overlap, self intersections, thick-stage input,
 failure atomicity and C# interop.
+
+## Rendering
+
+`PathPipeLineDrawSlabs` / `PipeLineObject.DrawSlabs(pixels, width, height, stride, color)`
+blend a solid color into a caller-owned BGRA32 buffer with premultiplied alpha
+(compatible with `Format32bppPArgb`). Stride must be positive and at least width*4;
+buffer length must cover every row. Buffer validation precedes pipeline changes.
+The buffer is not cleared; transparent black is the initial value for an empty image.
+
+If the latest item is not RasterSlab, rendering generates slabs automatically.
+Logical Bezier paths are flattened first. Existing RasterSlab stages are reused.
+Coverage is accumulated for a row, clipped to the image, then blended source-over
+once per pixel, including both paint opacity and geometric coverage. Row padding
+is untouched. This function produces pixels; displaying the image is the caller's job.
