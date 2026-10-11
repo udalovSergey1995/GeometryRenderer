@@ -99,7 +99,7 @@ namespace GeometryRenderer.NET.TestApp
 
                 if (1 == 1)
                 {
-                    pl.SetThickLine(thick, ThickLineJoin.Bevel, ThickLineCap.Flat);
+                    pl.SetThickLine(thick, ThickLineJoin.Bevel, ThickLineCap.Round);
 
                     plType = pl.CurrentStage.StageType;
 
