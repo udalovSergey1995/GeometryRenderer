@@ -237,21 +237,33 @@ namespace GeometryRenderer.NET.TestApp
                     var thck = (pl.CurrentStage as PipeThickLineStage)?.Thickness;
                 }
 
-
-                var wPts = GetPts(pts);
-
-                var gp = new GraphicsPath(wPts, flags);
-
-                if (plType == EPathStageType.PathStageTypeThickLine)
+                if (1 == 1)
                 {
-                    gp.FillMode = FillMode.Winding;
-                    var br = new SolidBrush(Color.FromArgb(150, Color.Red));
-                    e.Graphics.FillPath(br, gp);
+                    var wPts = GetPts(pts);
+
+                    var gp = new GraphicsPath(wPts, flags);
+
+                    if (plType == EPathStageType.PathStageTypeThickLine)
+                    {
+                        gp.FillMode = FillMode.Winding;
+                        var br = new SolidBrush(Color.FromArgb(150, Color.Red));
+                        e.Graphics.FillPath(br, gp);
+                    }
+                    else
+                    {
+                        e.Graphics.DrawPath(Pens.Red, gp);
+                    }
                 }
-                else
+
+                if (1 == 0)
                 {
-                    e.Graphics.DrawPath(Pens.Red, gp);
+                    pl.RasterizeSlabs();
+
+                    plType = pl.CurrentStage.StageType;
+
                 }
+
+                
             }
         }
     }

@@ -34,7 +34,8 @@ namespace GeometryRenderer.NET.Bindings.Types
         PathStageTypeLogicalCurve,
         PathStageTypeApproximated,
         PathStageTypeDashPattern,
-        PathStageTypeThickLine
+        PathStageTypeThickLine,
+        PathStageTypeRasterSlab
     }
 
     public enum ThickLineJoin : int
@@ -156,6 +157,35 @@ namespace GeometryRenderer.NET.Bindings.Types
         { }
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct RasterSlab
+    {
+        public float Y, Height;
+        public float XLeftTop, XLeftBottom, XRightTop, XRightBottom;
+    }
+
+    public class PipeRasterSlabStage : PipeLineStage
+    {
+        public PipeRasterSlabStage(IntPtr nativeObject) : base(nativeObject) { }
+        public int SlabCount => BaseNativeObject.GetObjectPropertyInt(_nativeObject, (int)PathStagesEntryProps.SlabCount);
+        public RasterSlab[] Slabs
+        {
+            get
+            {
+                byte[] bytes = BaseNativeObject.GetObjectPropertyBytes(_nativeObject, (int)PathStagesEntryProps.SlabData);
+                int size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(RasterSlab));
+                if (bytes.Length % size != 0) throw new InvalidOperationException("Invalid slab data size");
+                var slabs = new RasterSlab[bytes.Length / size];
+                if (bytes.Length == 0) return slabs;
+                var handle = System.Runtime.InteropServices.GCHandle.Alloc(slabs, System.Runtime.InteropServices.GCHandleType.Pinned);
+                try { System.Runtime.InteropServices.Marshal.Copy(bytes, 0, handle.AddrOfPinnedObject(), bytes.Length); }
+                finally { handle.Free(); }
+                return slabs;
+            }
+        }
+        public float GetCoverage(float x, float y) => Native.RasterSlabGetCoverage(_nativeObject, x, y);
+    }
+
     public class PipeLineObject : IDisposable
     {
         private IntPtr _nativeObject = IntPtr.Zero;
@@ -193,6 +223,10 @@ namespace GeometryRenderer.NET.Bindings.Types
 
                         case EPathStageType.PathStageTypeThickLine:
                             yield return new PipeThickLineStage(item);
+                            break;
+
+                        case EPathStageType.PathStageTypeRasterSlab:
+                            yield return new PipeRasterSlabStage(item);
                             break;
 
                         default:
@@ -368,6 +402,12 @@ namespace GeometryRenderer.NET.Bindings.Types
         public void ClosePath()
         {
 
+        }
+
+        public void RasterizeSlabs()
+        {
+            if (Native.PathPipeLineRasterizeSlabs(_nativeObject) != 1)
+                throw new InvalidOperationException("Slab rasterization failed: unsupported geometry, invalid coordinates or resource limit");
         }
 
         public void Dispose()

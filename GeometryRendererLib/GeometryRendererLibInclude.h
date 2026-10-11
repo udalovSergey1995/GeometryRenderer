@@ -18,6 +18,7 @@
 #include "flatten_item.h"
 #include "dash_pattern_item.h"
 #include "thick_line_item.h"
+#include "raster_slab_item.h"
 
 #include "rasterize_pipeline.h"
 

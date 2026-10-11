@@ -26,6 +26,7 @@ typedef enum _PathStageType
     PathStageTypeApproximated,
     PathStageTypeDashPattern,
     PathStageTypeThickLine,
+    PathStageTypeRasterSlab,
     PathStageTypeCount
 } EPathStageType;
 

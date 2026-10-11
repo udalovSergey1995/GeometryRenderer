@@ -1,5 +1,27 @@
 #include "stdafx.h"
 
+GR_EXPORT BOOL GR_CALL PathPipeLineRasterizeSlabs(PSPathPipeLine pipeline)
+{
+    PSPathStageEntry entry;
+    PSLineItem line;
+    PSRasterSlabItem item;
+    if (!pipeline || !(entry = PathStagesGetLastStage(&pipeline->m_sPathStages))) return FALSE;
+    switch (entry->StageType)
+    {
+        case PathStageTypeLogicalCurve:
+        case PathStageTypeApproximated: line = (PSLineItem)entry->StageData; break;
+        case PathStageTypeDashPattern: line = ((PSDashPatternItem)entry->StageData)->DashedLine; break;
+        case PathStageTypeThickLine: line = ((PSThickLineItem)entry->StageData)->ThickGeometry; break;
+        default: return FALSE;
+    }
+    item = RasterSlabItemCreate(line);
+    if (!item) return FALSE;
+    if (!PathStagesAddStage(&pipeline->m_sPathStages, PathStageTypeRasterSlab,
+        item, RasterSlabItemFree, RasterSlabItemGetProperty))
+    { RasterSlabItemFree(item); return FALSE; }
+    return TRUE;
+}
+
 /*
 * Проинициализировать объект паплайна
 */

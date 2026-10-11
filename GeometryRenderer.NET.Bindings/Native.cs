@@ -5,6 +5,12 @@ namespace GeometryRenderer.NET.Bindings
 {
     public static class Native
     {
+        [DllImport(NtivePinvokeDefs.GeometryRendererDll, CallingConvention = CallingConvention.StdCall)]
+        public static extern int PathPipeLineRasterizeSlabs(IntPtr pipeline);
+
+        [DllImport(NtivePinvokeDefs.GeometryRendererDll, CallingConvention = CallingConvention.StdCall)]
+        public static extern float RasterSlabGetCoverage(IntPtr stage, float x, float y);
+
         /// <summary>
         /// Нативная функция для получения свойства объекта
         /// </summary>

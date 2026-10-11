@@ -44,7 +44,11 @@ typedef enum _EStageProps
 
         ESP_ARC_TOLERANCE,
 
-    ESP_THICK_LINE_END
+    ESP_THICK_LINE_END,
+    ESP_SLAB_START,
+        ESP_SLAB_COUNT,
+        ESP_SLAB_DATA,
+    ESP_SLAB_END
 } EStageProps;
 
 #define IS_LOGICAL_ITEM_PROPS(__prop) \

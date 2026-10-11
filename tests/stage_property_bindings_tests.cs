@@ -60,6 +60,16 @@ internal static class StagePropertyBindingsTests
                 Check(thick.Path.Length == thick.PathLen, "Explicit tolerance geometry");
             }
             Console.WriteLine("Stage property C# tests: PASS");
+            using (var pipeline = new PipeLineObject())
+            {
+                pipeline.AddLinePath(new float[] { 0, 0.1f, 2, 0.1f, 2, 0.3f, 0, 0.3f },
+                    new byte[] { 0, 1, 1, 0x81 });
+                pipeline.RasterizeSlabs();
+                var stage = (PipeRasterSlabStage)pipeline.CurrentStage;
+                Check(stage.SlabCount == stage.Slabs.Length && stage.SlabCount == 1, "Slab property layout");
+                Check(Math.Abs(stage.GetCoverage(0, 0) - 0.2f) < 0.00001f, "Analytic slab coverage");
+            }
+            Console.WriteLine("Raster slab C# tests: PASS");
             return 0;
         }
         catch (Exception error)

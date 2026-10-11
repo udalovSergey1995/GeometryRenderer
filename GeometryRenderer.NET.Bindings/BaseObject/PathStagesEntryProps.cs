@@ -33,6 +33,10 @@
 
             MiterLimit,
 
-            ArcTolerance
+            ArcTolerance,
+
+        SlabPropsStart = 20,
+            SlabCount,
+            SlabData
     }
 }
